@@ -1,0 +1,10 @@
+{
+  "name": "Qlog-Tools",
+  "short_name": "Qlog",
+  "description": "QSL-Karten und Logbuch-Tools für Qlog",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fffbfe",
+  "theme_color": "#6750A4",
+  "icons": []
+}
