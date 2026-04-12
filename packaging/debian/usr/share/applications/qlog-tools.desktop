@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Qlog-Tools
+GenericName=QSL-Verwaltung
+Comment=QSL-Karten- und Logbuch-Verwaltung für Qlog
+Exec=qlog-tools
+Icon=qlog-tools
+Terminal=false
+Categories=HamRadio;Utility;
+Keywords=amateurfunk;qsl;qlog;adif;logbuch;
+StartupNotify=true

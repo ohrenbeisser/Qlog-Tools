@@ -1,0 +1,16 @@
+Package: qlog-tools
+Version: 0.2.0
+Section: hamradio
+Priority: optional
+Architecture: amd64
+Depends: python3 (>= 3.10), python3-pip, python3-tk, python3-venv
+Maintainer: Chris Seifert, DL6LG <chris@ohrenbeisser.de>
+Homepage: https://www.ohrenbeisser.de
+Description: QSL-Karten- und Logbuch-Verwaltung für Qlog
+ Qlog-Tools ist eine Desktop-Applikation zur Verwaltung von QSL-Karten
+ für das Amateurfunk-Logbuch Qlog. Sie ermöglicht das Eintragen empfangener
+ Karten, das Filtern und den Export als ADIF-Datei für den Bureau-Versand.
+ .
+ Die Anwendung besteht aus einem FastAPI-Backend (Port 8765) und einer
+ Browser-basierten PWA-Oberfläche. Die Konfiguration erfolgt über ein
+ Tkinter-Fenster.

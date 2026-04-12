@@ -1,0 +1,27 @@
+#!/bin/bash
+# postinst — wird nach dem Entpacken des Pakets ausgeführt.
+# Erstellt ein virtualenv und installiert die Python-Abhängigkeiten.
+
+set -e
+
+APP_DIR="/opt/qlog-tools/app"
+VENV_DIR="/opt/qlog-tools/venv"
+
+case "$1" in
+  configure)
+    echo "Qlog-Tools: Erstelle Python-Virtualenv..."
+    python3 -m venv "$VENV_DIR"
+
+    echo "Qlog-Tools: Installiere Python-Abhängigkeiten..."
+    "$VENV_DIR/bin/pip" install --quiet --upgrade pip
+    "$VENV_DIR/bin/pip" install --quiet -r "$APP_DIR/requirements.txt"
+
+    # Konfigurationsverzeichnis für alle Nutzer beschreibbar machen,
+    # damit config.ini im App-Verzeichnis gespeichert werden kann.
+    chmod 777 "$APP_DIR"
+
+    echo "Qlog-Tools: Installation abgeschlossen."
+    ;;
+esac
+
+exit 0

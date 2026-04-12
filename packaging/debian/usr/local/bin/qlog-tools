@@ -1,0 +1,16 @@
+#!/bin/bash
+# Starter-Script für Qlog-Tools.
+# Wechselt ins App-Verzeichnis (config.ini wird dort gespeichert)
+# und startet die App mit dem gebündelten virtualenv.
+
+APP_DIR="/opt/qlog-tools/app"
+VENV_PYTHON="/opt/qlog-tools/venv/bin/python3"
+
+# Sicherstellen dass das venv existiert (sollte durch postinst gegeben sein)
+if [ ! -x "$VENV_PYTHON" ]; then
+    echo "Fehler: Virtualenv nicht gefunden. Bitte 'sudo dpkg --configure qlog-tools' ausführen." >&2
+    exit 1
+fi
+
+cd "$APP_DIR"
+exec "$VENV_PYTHON" main.py "$@"

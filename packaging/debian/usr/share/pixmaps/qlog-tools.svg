@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <!-- Hintergrund -->
+  <circle cx="24" cy="24" r="24" fill="#6750A4"/>
+  <!-- Antenne (Strich oben) -->
+  <line x1="24" y1="6" x2="24" y2="14" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Funkwellen links -->
+  <path d="M17 13 Q11 19 11 25 Q11 31 17 37" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M20 16 Q15 20 15 25 Q15 30 20 34" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Funkwellen rechts -->
+  <path d="M31 13 Q37 19 37 25 Q37 31 31 37" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M28 16 Q33 20 33 25 Q33 30 28 34" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- Mittelpunkt -->
+  <circle cx="24" cy="25" r="3.5" fill="white"/>
+</svg>

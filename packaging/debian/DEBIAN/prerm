@@ -1,0 +1,14 @@
+#!/bin/bash
+# prerm — wird vor dem Entfernen des Pakets ausgeführt.
+# Löscht das virtualenv (wird von dpkg nicht automatisch entfernt).
+
+set -e
+
+case "$1" in
+  remove|purge)
+    echo "Qlog-Tools: Entferne Virtualenv..."
+    rm -rf /opt/qlog-tools/venv
+    ;;
+esac
+
+exit 0
