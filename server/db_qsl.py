@@ -147,3 +147,121 @@ def _update_single_qso(conn: sqlite3.Connection, e: dict) -> int:
     # zuverlässiger als ein separates SELECT changes(), da changes()
     # durch zwischenzeitliche Statements überschrieben werden könnte.
     return cursor.rowcount
+
+
+# ── Export-Abfragen ───────────────────────────────────────────────────────────
+
+def export_date_range(db_path: str) -> dict:
+    """Gibt das älteste und neueste Datum der Bureau-Export-QSOs zurück.
+
+    Nur QSOs mit qsl_sent='Q' AND qsl_sent_via='B' werden berücksichtigt.
+    Gibt {'date_from': 'YYYY-MM-DD', 'date_to': 'YYYY-MM-DD'} zurück,
+    oder beide Felder als None wenn keine passenden QSOs vorhanden sind.
+    """
+    conn = get_connection(db_path)
+    try:
+        row = conn.execute(
+            """
+            SELECT strftime('%Y-%m-%d', MIN(start_time)) AS date_from,
+                   strftime('%Y-%m-%d', MAX(start_time)) AS date_to
+            FROM   contacts
+            WHERE  qsl_sent     = 'Q'
+              AND  qsl_sent_via = 'B'
+            """
+        ).fetchone()
+        return {
+            "date_from": row["date_from"],
+            "date_to":   row["date_to"],
+        }
+    finally:
+        conn.close()
+
+
+def export_countries(db_path: str) -> list[str]:
+    """Gibt alle Länder zurück, die im Export-Filter vorkommen können.
+
+    Beschränkt auf QSOs mit qsl_sent='Q' und qsl_sent_via='B' —
+    also genau die QSOs, die der Export-Tab standardmäßig anzeigt.
+    Sortiert alphabetisch, leere Werte werden ausgelassen.
+    """
+    conn = get_connection(db_path)
+    try:
+        rows = conn.execute(
+            """
+            SELECT DISTINCT country
+            FROM   contacts
+            WHERE  qsl_sent     = 'Q'
+              AND  qsl_sent_via = 'B'
+              AND  country IS NOT NULL
+              AND  country != ''
+            ORDER  BY country
+            """
+        ).fetchall()
+        return [r["country"] for r in rows]
+    finally:
+        conn.close()
+
+
+def export_qsos(
+    db_path:    str,
+    date_from:  str | None = None,
+    date_to:    str | None = None,
+    band:       str | None = None,
+    mode:       str | None = None,
+    country:    str | None = None,
+) -> list[dict]:
+    """QSOs für den Bureau-Export: qsl_sent='Q' AND qsl_sent_via='B'.
+
+    Alle Parameter sind optional — ohne Filter werden alle passenden
+    QSOs zurückgegeben. date_from / date_to beziehen sich auf start_time.
+
+    Parameters
+    ----------
+    date_from : str | None  — Untere Datumsgrenze, Format YYYY-MM-DD (inklusiv)
+    date_to   : str | None  — Obere Datumsgrenze, Format YYYY-MM-DD (inklusiv)
+    band      : str | None  — Exakter Band-Wert, z. B. '40m'
+    mode      : str | None  — Exakter Mode-Wert, z. B. 'SSB'
+    country   : str | None  — Exakter Ländername
+    """
+    conditions = [
+        "qsl_sent     = 'Q'",
+        "qsl_sent_via = 'B'",
+    ]
+    params: list = []
+
+    if date_from:
+        conditions.append("date(start_time) >= date(?)")
+        params.append(date_from)
+    if date_to:
+        conditions.append("date(start_time) <= date(?)")
+        params.append(date_to)
+    if band:
+        conditions.append("band = ?")
+        params.append(band)
+    if mode:
+        conditions.append("mode = ?")
+        params.append(mode)
+    if country:
+        conditions.append("country = ?")
+        params.append(country)
+
+    where = " AND ".join(conditions)
+
+    conn = get_connection(db_path)
+    try:
+        rows = conn.execute(
+            f"""
+            SELECT id, callsign,
+                   strftime('%Y-%m-%d', start_time) AS start_date,
+                   strftime('%H:%M',   start_time)  AS start_utc,
+                   band, mode, rst_sent, rst_rcvd, country,
+                   qsl_rcvd, qsl_sent, qsl_sent_via
+            FROM   contacts
+            WHERE  {where}
+            ORDER  BY start_time DESC
+            """,
+            params,
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()

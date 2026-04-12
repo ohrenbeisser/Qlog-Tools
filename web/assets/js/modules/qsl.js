@@ -74,8 +74,8 @@ function _renderResults(call, data) {
   }
 
   // Select-All-Checkboxen zurücksetzen
-  document.getElementById('check-all-rcvd').checked = false;
-  document.getElementById('check-all-sent').checked = false;
+  document.getElementById('check-all-rcvd').checked  = false;
+  document.getElementById('check-all-anfrd').checked = false;
   updateCount();
 
   document.getElementById('result-area').style.display = 'block';
@@ -84,18 +84,20 @@ function _renderResults(call, data) {
 /**
  * Erstellt ein <tr>-Element für ein einzelnes QSO.
  *
- * Bereits bestätigte QSOs (qsl_rcvd='Y' UND qsl_sent='Y') werden
- * mit der Klasse row-confirmed abgedimmt dargestellt.
- * Einzeln bestätigte Checkboxen werden deaktiviert, aber angehakt.
+ * Rcvd-Checkbox: deaktiviert wenn qsl_rcvd='Y' (Karte empfangen, unveränderlich).
+ * Sent-Checkbox: deaktiviert wenn qsl_sent='Y' (Karte bereits verschickt).
+ *   'R' (Angefordert) sperrt NICHT — kann erneut angefordert werden.
+ *
+ * Eine Zeile wird abgedimmt (row-confirmed), wenn BEIDE Felder auf 'Y' stehen.
  *
  * @param {Object} q — QSO-Objekt vom Backend
  * @returns {HTMLTableRowElement}
  */
 function _buildQsoRow(q) {
-  const date       = q.start_date ?? '—';
-  const time       = q.start_utc  ?? '—';
+  const date        = q.start_date ?? '—';
+  const time        = q.start_utc  ?? '—';
   const alreadyRcvd = q.qsl_rcvd === 'Y';
-  const alreadySent = q.qsl_sent  === 'Y';
+  const alreadySent = q.qsl_sent  === 'Y';  // nur 'Y' sperrt, nicht 'R'
 
   const tr = document.createElement('tr');
   if (alreadyRcvd && alreadySent) tr.classList.add('row-confirmed');
@@ -117,7 +119,7 @@ function _buildQsoRow(q) {
     </td>
     <td class="md-td md-text-center">
       <label class="md-checkbox-container" style="justify-content:center">
-        <input type="checkbox" class="cb-sent" ${alreadySent ? 'checked disabled' : ''}
+        <input type="checkbox" class="cb-anfrd" ${alreadySent ? 'checked disabled' : ''}
           onchange="updateCount(); highlightRow(this)">
         <span></span>
       </label>
@@ -151,7 +153,7 @@ export function highlightRow(cb) {
   const tr = cb.closest('tr');
   const anyChecked =
     tr.querySelector('.cb-rcvd').checked ||
-    tr.querySelector('.cb-sent').checked;
+    tr.querySelector('.cb-anfrd').checked;
   tr.classList.toggle('row-selected', anyChecked);
 }
 
@@ -160,11 +162,11 @@ export function highlightRow(cb) {
  * Deaktivierte (bereits bestätigte) Checkboxen zählen nicht mit.
  */
 export function updateCount() {
-  const rcvd = document.querySelectorAll('.cb-rcvd:checked:not(:disabled)').length;
-  const sent  = document.querySelectorAll('.cb-sent:checked:not(:disabled)').length;
+  const rcvd  = document.querySelectorAll('.cb-rcvd:checked:not(:disabled)').length;
+  const anfrd = document.querySelectorAll('.cb-anfrd:checked:not(:disabled)').length;
   const el = document.getElementById('submit-info');
-  if (rcvd > 0 || sent > 0) {
-    el.innerHTML = `<strong>${rcvd}</strong> Rcvd · <strong>${sent}</strong> Sent ausgewählt`;
+  if (rcvd > 0 || anfrd > 0) {
+    el.innerHTML = `<strong>${rcvd}</strong> Empfangen · <strong>${anfrd}</strong> Angefordert`;
   } else {
     el.textContent = '0 QSOs ausgewählt';
   }
@@ -197,6 +199,10 @@ export async function doSubmit() {
  * Bereits deaktivierte Checkboxen (vorherige Bestätigungen) werden ignoriert.
  * qsl_rcvd_via und qsl_sent_via werden als null gesendet (kein Via-Feld in der UI).
  *
+ * Werte:
+ *   Rcvd-Checkbox → qsl_rcvd = 'Y'  (Karte empfangen)
+ *   Anfrd-Checkbox → qsl_sent = 'R'  (Karte angefordert / TNX QSO)
+ *
  * @param {string} date — Datum im Format YYYY-MM-DD
  * @returns {Object[]} entries — Liste von QSO-Einträgen für die API
  */
@@ -204,21 +210,21 @@ function _collectCheckedEntries(date) {
   const entries = [];
 
   document.querySelectorAll('#qso-tbody tr').forEach(tr => {
-    const rcvd = tr.querySelector('.cb-rcvd');
-    const sent = tr.querySelector('.cb-sent');
-    if (!rcvd || !sent) return;
+    const rcvd  = tr.querySelector('.cb-rcvd');
+    const anfrd = tr.querySelector('.cb-anfrd');
+    if (!rcvd || !anfrd) return;
 
-    // Zeile überspringen, wenn weder rcvd noch sent neu aktiviert wurden
-    const rcvdNew = rcvd.checked && !rcvd.disabled;
-    const sentNew = sent.checked && !sent.disabled;
-    if (!rcvdNew && !sentNew) return;
+    // Zeile überspringen, wenn weder rcvd noch anfrd neu aktiviert wurden
+    const rcvdNew  = rcvd.checked  && !rcvd.disabled;
+    const anfrdNew = anfrd.checked && !anfrd.disabled;
+    if (!rcvdNew && !anfrdNew) return;
 
     entries.push({
       id:           parseInt(tr.dataset.id, 10),
       date,
-      qsl_rcvd:     rcvdNew ? 'Y' : null,
-      qsl_sent:     sentNew ? 'Y' : null,
-      qsl_rcvd_via: null,  // Via-Auswahl ist in Phase 1 nicht implementiert
+      qsl_rcvd:     rcvdNew  ? 'Y' : null,
+      qsl_sent:     anfrdNew ? 'R' : null,  // 'R' = Requested (TNX QSO)
+      qsl_rcvd_via: null,
       qsl_sent_via: null,
     });
   });
@@ -232,18 +238,27 @@ function _collectCheckedEntries(date) {
  */
 function _lockSubmittedRows() {
   document.querySelectorAll('#qso-tbody tr').forEach(tr => {
-    const rcvd = tr.querySelector('.cb-rcvd');
-    const sent = tr.querySelector('.cb-sent');
-    if (!rcvd || !sent) return;
-    if (rcvd.checked || sent.checked) {
+    const rcvd  = tr.querySelector('.cb-rcvd');
+    const anfrd = tr.querySelector('.cb-anfrd');
+    if (!rcvd || !anfrd) return;
+
+    // Rcvd abschliessen: Empfang ist unveränderlich → sperren
+    if (rcvd.checked) {
       rcvd.disabled = true;
-      sent.disabled = true;
-      tr.classList.add('row-confirmed');
-      tr.classList.remove('row-selected');
     }
+    // Anfrd NICHT sperren: 'R' kann erneut gesetzt werden (z. B. zweiter Export)
+    // Checkbox nur optisch zurücksetzen damit sie wieder wählbar ist
+    anfrd.checked = false;
+
+    // Zeile dimmen wenn beide Seiten abgeschlossen (rcvd=Y gesetzt, anfrd abgehakt)
+    const bothDone = rcvd.checked && rcvd.disabled;
+    if (bothDone) {
+      tr.classList.add('row-confirmed');
+    }
+    tr.classList.remove('row-selected');
   });
 
-  document.getElementById('check-all-rcvd').checked = false;
-  document.getElementById('check-all-sent').checked = false;
+  document.getElementById('check-all-rcvd').checked  = false;
+  document.getElementById('check-all-anfrd').checked = false;
   updateCount();
 }

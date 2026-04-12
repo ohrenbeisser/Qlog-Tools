@@ -58,6 +58,31 @@ export function showPanel(name, item) {
 }
 
 /**
+ * Wechselt zwischen den Tabs innerhalb des QSL-Panels.
+ *
+ * Funktioniert unabhängig von showPanel() — steuert nur die internen
+ * md-tab-panel Elemente innerhalb von #panel-qsl.
+ *
+ * @param {'empfangen'|'export'} name — Tab-ID (ohne 'qsl-panel-' Präfix)
+ * @param {HTMLElement} btn           — Der angeklickte Tab-Button
+ */
+export function switchQslTab(name, btn) {
+  document.querySelectorAll('#panel-qsl .md-tab-panel').forEach(p => p.classList.remove('md-active'));
+  document.querySelectorAll('#panel-qsl .md-tab').forEach(t => {
+    t.classList.remove('md-active');
+    t.setAttribute('aria-selected', 'false');
+  });
+  document.getElementById('qsl-panel-' + name).classList.add('md-active');
+  btn.classList.add('md-active');
+  btn.setAttribute('aria-selected', 'true');
+
+  // Länderliste laden wenn Export-Tab erstmals geöffnet wird
+  if (name === 'export' && panelCallbacks.qsl) {
+    panelCallbacks.qsl();
+  }
+}
+
+/**
  * Initialisiert den Dark/Light-Theme-Umschalter in der App Bar.
  *
  * Reagiert auf:

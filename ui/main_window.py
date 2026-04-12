@@ -9,9 +9,11 @@ dem FastAPI-Daemon-Thread über eine thread-safe queue.Queue, die alle
 import datetime
 import queue
 import tkinter as tk
+import webbrowser
 from tkinter import filedialog, ttk
 
 from server import config as cfg_module
+from server.network import get_local_ips
 
 
 class MainWindow:
@@ -61,13 +63,24 @@ class MainWindow:
         self._build_log_textfield(parent)
 
     def _build_log_statusbar(self, parent: ttk.Frame):
-        """Obere Leiste im Log-Tab mit Status-Label und 'Log leeren'-Button."""
+        """Obere Leiste im Log-Tab: Status-Label, klickbare IP-Links, 'Log leeren'."""
         bar = ttk.Frame(parent)
         bar.pack(fill=tk.X, padx=8, pady=(8, 4))
 
-        self._status_var = tk.StringVar(value="● Server läuft")
-        ttk.Label(bar, textvariable=self._status_var,
+        # Fester Status-Text links
+        ttk.Label(bar, text="● Server läuft",
                   foreground="#22c55e").pack(side=tk.LEFT)
+
+        # Klickbare Links für jede Netzwerk-IP
+        port = self._settings["port"]
+        for ip in get_local_ips():
+            url = f"http://{ip}:{port}"
+            lbl = tk.Label(bar, text=f"  {url}",
+                           foreground="#60a5fa", cursor="hand2",
+                           font=("TkDefaultFont", 9, "underline"))
+            lbl.pack(side=tk.LEFT)
+            # Lambda mit Default-Argument verhindert Late-Binding-Problem
+            lbl.bind("<Button-1>", lambda e, u=url: webbrowser.open(u))
 
         ttk.Button(bar, text="Log leeren",
                    command=self._clear_log).pack(side=tk.RIGHT)

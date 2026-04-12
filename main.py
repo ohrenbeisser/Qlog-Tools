@@ -24,7 +24,7 @@ def run_server(port: int) -> None:
     """Startet uvicorn mit der FastAPI-App (blockierend, läuft in eigenem Thread)."""
     uvicorn.run(
         api_module.app,
-        host="127.0.0.1",   # Nur lokal — kein Netzwerkzugriff von aussen
+        host="0.0.0.0",     # Alle Interfaces — ermöglicht Zugriff über LAN-IP
         port=port,
         log_level="warning",  # uvicorn-eigene Logs unterdrücken; wir loggen selbst
     )

@@ -137,109 +137,246 @@
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      PANEL: QSL
-     Rufzeichen suchen, QSL-Status per Checkbox eintragen.
+     Zwei Tabs: Empfangen (Eintragung) und Export (Bureau-ADIF).
      ══════════════════════════════════════════════════════════════════════════ -->
-<div class="app-content tab-panel" id="panel-qsl">
+<div class="tab-panel" id="panel-qsl">
 
-  <!-- Suchkarte -->
-  <article class="md-card md-card-elevated md-mb-lg">
-    <div class="md-card-content">
-      <div class="md-d-flex md-gap-md md-align-end" style="flex-wrap:wrap">
+  <!-- MDesign Tabs -->
+  <div class="md-tabs qsl-tabs" role="tablist">
+    <button class="md-tab md-active" role="tab" id="tab-empfangen"
+            aria-controls="qsl-panel-empfangen" aria-selected="true"
+            onclick="switchQslTab('empfangen', this)">
+      <span class="md-icon">move_to_inbox</span>
+      Empfangen
+    </button>
+    <button class="md-tab" role="tab" id="tab-export"
+            aria-controls="qsl-panel-export" aria-selected="false"
+            onclick="switchQslTab('export', this)">
+      <span class="md-icon">outbox</span>
+      Export
+    </button>
+  </div>
 
-        <div class="md-text-field callsign-input" style="flex:0 0 200px">
-          <input type="text" id="callsign-input" placeholder=" "
-            oninput="this.value = this.value.toUpperCase()"
-            onkeydown="if(event.key==='Enter') doSearch()">
-          <label class="md-text-field-label">Rufzeichen</label>
+  <!-- ── TAB: EMPFANGEN ──────────────────────────────────────────────────── -->
+  <div class="md-tab-panel md-active app-content" id="qsl-panel-empfangen"
+       role="tabpanel" aria-labelledby="tab-empfangen">
+
+    <!-- Suchkarte -->
+    <article class="md-card md-card-outlined md-mb-lg">
+      <div class="md-card-content search-card-content">
+
+        <!-- Zeile 1: Eingabefelder -->
+        <div class="search-fields">
+
+          <!-- Rufzeichen -->
+          <div class="search-field-callsign">
+            <div class="md-text-field callsign-input">
+              <input type="text" id="callsign-input" placeholder=" "
+                oninput="this.value = this.value.toUpperCase()"
+                onkeydown="if(event.key==='Enter') doSearch()"
+                autocomplete="off" autocorrect="off" spellcheck="false">
+              <label class="md-text-field-label">Rufzeichen</label>
+            </div>
+            <span class="md-helper-text">z. B. DL1ABC · Enter zum Suchen</span>
+          </div>
+
+          <!-- Datum -->
+          <div class="search-field-date">
+            <div class="md-text-field">
+              <input type="date" id="date-input" placeholder=" ">
+              <label class="md-text-field-label">Datum der Eintragung</label>
+            </div>
+            <span class="md-helper-text">Wird als qsl_rdate / qsl_sdate eingetragen</span>
+          </div>
+
         </div>
 
-        <div class="md-text-field" style="flex:0 0 160px">
-          <input type="date" id="date-input" placeholder=" ">
-          <label class="md-text-field-label">Datum</label>
-        </div>
+        <hr class="md-divider search-divider">
 
-        <button class="md-btn md-btn-filled md-ripple" onclick="doSearch()">
-          <span class="md-icon">search</span>Suchen
-        </button>
-        <button class="md-btn md-btn-outlined md-ripple" onclick="clearSearch()">
-          <span class="md-icon">clear</span>Leeren
-        </button>
+        <div class="search-actions">
+          <button class="md-btn md-btn-filled md-ripple" onclick="doSearch()">
+            <span class="md-icon">search</span>Suchen
+          </button>
+          <button class="md-btn md-btn-outlined md-ripple" onclick="clearSearch()">
+            <span class="md-icon">clear</span>Leeren
+          </button>
+        </div>
 
       </div>
-    </div>
-  </article>
+    </article>
 
-  <!-- Initial-Hinweis -->
-  <div class="empty-state" id="empty-state">
-    <span class="md-icon">mark_email_unread</span>
-    <p class="md-text-muted">Rufzeichen eingeben und Suchen drücken</p>
+    <!-- Initial-Hinweis -->
+    <div class="empty-state" id="empty-state">
+      <span class="md-icon">move_to_inbox</span>
+      <p class="md-text-muted">Rufzeichen eingeben und Suchen drücken</p>
+    </div>
+
+    <!-- Ergebnis-Bereich -->
+    <div id="result-area" style="display:none">
+
+      <div class="md-d-flex md-align-center md-justify-between md-mb-sm">
+        <h2 class="md-headline-small" id="result-title"></h2>
+        <span class="md-label-medium md-text-muted">
+          <span id="result-count">0</span> QSO(s) gefunden
+        </span>
+      </div>
+
+      <!-- Legende -->
+      <div class="table-legend">
+        <span>
+          <span class="legend-dot" style="background:var(--md-primary, #6750A4)"></span>
+          Empfangen = QSL-Karte eingegangen (setzt qsl_rcvd = Y)
+        </span>
+        <span>
+          <span class="legend-dot" style="background:var(--md-tertiary, #7D5260)"></span>
+          Anfordern = TNX QSO, Karte senden (setzt qsl_sent = R)
+        </span>
+      </div>
+
+      <!-- Select-All-Leiste -->
+      <div class="select-all-bar">
+        <label class="md-checkbox-container">
+          <input type="checkbox" id="check-all-rcvd"
+                 onchange="selectAll('rcvd', this.checked)">
+          <span class="md-label-medium">Alle Empfangen</span>
+        </label>
+        <label class="md-checkbox-container">
+          <input type="checkbox" id="check-all-anfrd"
+                 onchange="selectAll('anfrd', this.checked)">
+          <span class="md-label-medium">Alle Anfordern</span>
+        </label>
+      </div>
+
+      <!-- QSO-Tabelle -->
+      <div class="qso-table-wrap">
+        <table class="md-table md-table-striped qso-table" style="width:100%">
+          <thead>
+            <tr>
+              <th class="md-th">Datum</th>
+              <th class="md-th">Zeit UTC</th>
+              <th class="md-th">Band</th>
+              <th class="md-th">Mode</th>
+              <th class="md-th">RST Snt</th>
+              <th class="md-th">RST Rcvd</th>
+              <th class="md-th md-text-center">Empfangen ✓</th>
+              <th class="md-th md-text-center">Anfordern ✓</th>
+            </tr>
+          </thead>
+          <tbody id="qso-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Submit-Leiste -->
+      <div class="submit-bar">
+        <p class="md-body-medium md-text-muted" id="submit-info">0 QSOs ausgewählt</p>
+        <button class="md-btn md-btn-success md-ripple" onclick="doSubmit()">
+          <span class="md-icon">check_circle</span>Eintragen
+        </button>
+      </div>
+
+    </div>
   </div>
 
-  <!-- Ergebnis-Bereich (nach Suche sichtbar) -->
-  <div id="result-area" style="display:none">
+  <!-- ── TAB: EXPORT ─────────────────────────────────────────────────────── -->
+  <div class="md-tab-panel app-content" id="qsl-panel-export"
+       role="tabpanel" aria-labelledby="tab-export">
 
-    <div class="md-d-flex md-align-center md-justify-between md-mb-sm">
-      <h2 class="md-headline-small" id="result-title"></h2>
-      <span class="md-label-medium md-text-muted">
-        <span id="result-count">0</span> QSO(s) gefunden
-      </span>
+    <!-- Filter-Karte -->
+    <article class="md-card md-card-outlined md-mb-lg">
+      <div class="md-card-header">
+        <div class="md-card-header-text">
+          <h3 class="md-card-title">Filter</h3>
+          <p class="md-card-subtitle">Bureau-Export: qsl_sent = Q · qsl_sent_via = B</p>
+        </div>
+      </div>
+      <div class="md-card-content export-filter-content">
+
+        <!-- Zeile 1: Datumsbereich -->
+        <div class="export-filter-row">
+          <div class="md-text-field export-filter-field">
+            <input type="date" id="exp-date-from" placeholder=" ">
+            <label class="md-text-field-label">Datum von</label>
+          </div>
+          <div class="md-text-field export-filter-field">
+            <input type="date" id="exp-date-to" placeholder=" ">
+            <label class="md-text-field-label">Datum bis</label>
+          </div>
+        </div>
+
+        <!-- Zeile 2: Band, Mode, Land -->
+        <div class="export-filter-row">
+          <div class="md-text-field export-filter-field">
+            <input type="text" id="exp-band" placeholder=" " autocomplete="off">
+            <label class="md-text-field-label">Band</label>
+          </div>
+          <div class="md-text-field export-filter-field">
+            <input type="text" id="exp-mode" placeholder=" " autocomplete="off">
+            <label class="md-text-field-label">Mode</label>
+          </div>
+          <div class="export-filter-field">
+            <select id="exp-country" class="md-select">
+              <option value="">Alle Länder</option>
+            </select>
+          </div>
+        </div>
+
+        <hr class="md-divider search-divider">
+
+        <!-- Aktionsbuttons -->
+        <div class="search-actions">
+          <button class="md-btn md-btn-filled md-ripple" onclick="applyExportFilter()">
+            <span class="md-icon">filter_alt</span>Anwenden
+          </button>
+          <button class="md-btn md-btn-outlined md-ripple" onclick="resetExportFilter()">
+            <span class="md-icon">clear</span>Zurücksetzen
+          </button>
+          <span style="flex:1"></span>
+          <button class="md-btn md-btn-tonal md-ripple" onclick="downloadAdif()">
+            <span class="md-icon">download</span>ADIF herunterladen
+          </button>
+        </div>
+
+      </div>
+    </article>
+
+    <!-- Zustände -->
+    <div class="empty-state" id="exp-idle">
+      <span class="md-icon">outbox</span>
+      <p class="md-text-muted">Filter setzen und Anwenden drücken</p>
+    </div>
+    <div class="empty-state" id="exp-loading" style="display:none">
+      <span class="md-icon md-spin">progress_activity</span>
+      <p class="md-text-muted">Wird geladen…</p>
+    </div>
+    <div class="empty-state" id="exp-empty" style="display:none">
+      <span class="md-icon">inbox</span>
+      <p class="md-text-muted">Keine QSOs für diesen Filter gefunden</p>
     </div>
 
-    <!-- Legende -->
-    <div class="table-legend">
-      <span>
-        <span class="legend-dot" style="background:var(--md-primary, #6750A4)"></span>
-        Rcvd = QSL-Karte empfangen
-      </span>
-      <span>
-        <span class="legend-dot" style="background:var(--md-tertiary, #7D5260)"></span>
-        Sent = QSL-Karte senden (TNX QSO)
-      </span>
-    </div>
-
-    <!-- Select-All-Leiste -->
-    <div class="select-all-bar">
-      <label class="md-checkbox-container">
-        <input type="checkbox" id="check-all-rcvd"
-               onchange="selectAll('rcvd', this.checked)">
-        <span class="md-label-medium">Alle Rcvd</span>
-      </label>
-      <label class="md-checkbox-container">
-        <input type="checkbox" id="check-all-sent"
-               onchange="selectAll('sent', this.checked)">
-        <span class="md-label-medium">Alle Sent</span>
-      </label>
-    </div>
-
-    <!-- QSO-Tabelle -->
-    <div class="qso-table-wrap">
-      <table class="md-table md-table-striped qso-table" style="width:100%">
-        <thead>
-          <tr>
-            <th class="md-th">Datum</th>
-            <th class="md-th">Zeit UTC</th>
-            <th class="md-th">Band</th>
-            <th class="md-th">Mode</th>
-            <th class="md-th">RST Snt</th>
-            <th class="md-th">RST Rcvd</th>
-            <th class="md-th md-text-center">Rcvd ✓</th>
-            <th class="md-th md-text-center">Sent ✓</th>
-          </tr>
-        </thead>
-        <tbody id="qso-tbody"></tbody>
-      </table>
-    </div>
-
-    <!-- Submit-Leiste -->
-    <div class="submit-bar">
-      <p class="md-body-medium md-text-muted" id="submit-info">0 QSOs ausgewählt</p>
-      <button class="md-btn md-btn-success md-ripple" onclick="doSubmit()">
-        <span class="md-icon">check_circle</span>Eintragen
-      </button>
+    <!-- Ergebnis-Tabelle -->
+    <div id="exp-table-wrap" style="display:none">
+      <div class="qso-table-wrap standalone">
+        <table class="md-table md-table-striped qso-table" style="width:100%">
+          <thead>
+            <tr>
+              <th class="md-th md-text-center">Export ✓</th>
+              <th class="md-th">Rufzeichen</th>
+              <th class="md-th">Land</th>
+              <th class="md-th">Datum</th>
+              <th class="md-th">Zeit UTC</th>
+              <th class="md-th">Band</th>
+              <th class="md-th">Mode</th>
+              <th class="md-th">RST Snt</th>
+            </tr>
+          </thead>
+          <tbody id="exp-tbody"></tbody>
+        </table>
+      </div>
+      <p class="md-body-small md-text-muted md-mt-sm" id="exp-count"
+         style="text-align:right"></p>
     </div>
 
   </div>
-
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
@@ -359,11 +496,55 @@
      PANEL: ÜBER
      ══════════════════════════════════════════════════════════════════════════ -->
 <div class="app-content tab-panel" id="panel-about">
-  <div class="coming-soon">
-    <span class="md-icon">info</span>
-    <h2 class="md-headline-small">Über Qlog-Tools</h2>
-    <p class="md-body-medium md-text-muted">Versionsinformationen folgen.</p>
-  </div>
+
+  <h2 class="md-headline-small md-mb-lg">Über Qlog-Tools</h2>
+
+  <article class="md-card md-card-outlined about-card">
+    <div class="md-card-content about-card-content">
+
+      <!-- App-Icon + Name -->
+      <div class="about-header">
+        <span class="md-icon about-icon">radio</span>
+        <div>
+          <h3 class="md-headline-medium">Qlog-Tools</h3>
+          <span class="md-chip md-chip-suggestion about-version">Version 0.0.1</span>
+        </div>
+      </div>
+
+      <hr class="md-divider about-divider">
+
+      <!-- Metadaten -->
+      <dl class="about-meta">
+        <div class="about-meta-row">
+          <dt><span class="md-icon">person</span>Autor</dt>
+          <dd>Chris Seifert (DL6LG)</dd>
+        </div>
+        <div class="about-meta-row">
+          <dt><span class="md-icon">language</span>Webseite</dt>
+          <dd>
+            <a href="https://www.ohrenbeisser.de" target="_blank" rel="noopener"
+               class="md-link">www.ohrenbeisser.de</a>
+          </dd>
+        </div>
+        <div class="about-meta-row">
+          <dt><span class="md-icon">code</span>GitHub</dt>
+          <dd class="md-text-muted">— (folgt)</dd>
+        </div>
+      </dl>
+
+      <hr class="md-divider about-divider">
+
+      <!-- Kurzbeschreibung -->
+      <p class="md-body-medium about-description">
+        QSL-Karten- und Logbuch-Verwaltung für
+        <a href="https://github.com/foldynl/QLog" target="_blank" rel="noopener"
+           class="md-link">Qlog</a>.
+        Eintragen empfangener Karten, Bureau-Export als ADIF.
+      </p>
+
+    </div>
+  </article>
+
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════

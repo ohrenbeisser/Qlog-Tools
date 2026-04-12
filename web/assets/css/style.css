@@ -58,9 +58,45 @@
   opacity: 0.35;
 }
 
-/* ── Rufzeichen-Eingabe ──────────────────────────────────────────────────── */
+/* ── QSL-Suchkarte ───────────────────────────────────────────────────────── */
 
-/* Monospace-Schrift für Rufzeichen-Eingabefeld */
+/* MDesign md-card-content hat kein Top-Padding — hier explizit setzen */
+.search-card-content {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+/* Zeile 1: Eingabefelder nebeneinander, auf Mobile untereinander */
+.search-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  align-items: flex-start;
+}
+
+/* Rufzeichen-Feld wächst stärker, Datum bleibt kompakt */
+.search-field-callsign {
+  flex: 2 1 200px;   /* wächst doppelt so schnell wie Datum */
+  min-width: 160px;
+}
+.search-field-date {
+  flex: 1 1 160px;
+  min-width: 140px;
+}
+
+/* Trennlinie zwischen Feldern und Buttons */
+.search-divider {
+  margin: 20px 0 16px;
+}
+
+/* Zeile 2: Buttons linksbündig, mit Abstand zwischen ihnen */
+.search-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;   /* auf sehr kleinen Screens umbrechen */
+}
+
+/* Rufzeichen-Eingabe: Monospace, groß, damit Rufzeichen gut lesbar ist */
 .callsign-input input {
   font-family: 'Courier New', Courier, monospace;
   font-size: 18px;
@@ -168,6 +204,43 @@
   border-radius: 8px;
 }
 
+/* ── QSL-Tabs ────────────────────────────────────────────────────────────── */
+
+/* Tabs kleben direkt am oberen Rand des Panels, kein app-content-Padding */
+.qsl-tabs {
+  position: sticky;
+  top: 56px;          /* Höhe der App Bar */
+  z-index: 10;
+  margin-top: 16px;   /* Abstand zur App Bar */
+}
+
+/* Tab-Panels haben ihr eigenes app-content-Padding */
+#panel-qsl .md-tab-panel.app-content {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 28px 24px;
+}
+
+/* ── Export-Filter ───────────────────────────────────────────────────────── */
+
+.export-filter-content {
+  padding-top: 8px;
+  padding-bottom: 20px;
+}
+
+/* Filterzeile: Felder nebeneinander, auf Mobile untereinander */
+.export-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin-bottom: 16px;
+}
+
+.export-filter-field {
+  flex: 1 1 160px;
+  min-width: 130px;
+}
+
 /* ── Submit-Leiste ───────────────────────────────────────────────────────── */
 
 .submit-bar {
@@ -177,8 +250,64 @@
   margin-top: 20px;
 }
 
+/* ── Über-Panel ──────────────────────────────────────────────────────────── */
+
+.about-card     { max-width: 520px; }
+.about-card-content { padding-top: 24px; padding-bottom: 24px; }
+
+/* App-Icon + Titel nebeneinander */
+.about-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 4px;
+}
+.about-icon {
+  font-size: 48px;
+  color: var(--md-primary, #6750A4);
+}
+.about-version { margin-top: 6px; }
+
+.about-divider { margin: 20px 0; }
+
+/* Metadaten als Definition List */
+.about-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+}
+.about-meta-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.about-meta-row dt {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 130px;
+  font: var(--md-label-medium);
+  color: var(--md-on-surface-variant, #49454F);
+}
+.about-meta-row dt .md-icon { font-size: 16px; }
+.about-meta-row dd { margin: 0; }
+
+.about-description { color: var(--md-on-surface-variant, #49454F); }
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 600px) {
   .app-content { padding: 16px 12px; }
+
+  #panel-qsl .md-tab-panel.app-content { padding: 16px 12px; }
+
+  /* Suchkarte: Felder und Buttons volle Breite */
+  .search-field-callsign,
+  .search-field-date       { flex: 1 1 100%; }
+
+  .search-actions .md-btn  { flex: 1 1 auto; justify-content: center; }
+
+  /* Export-Filter: alle Felder volle Breite */
+  .export-filter-field     { flex: 1 1 100%; }
 }

@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import config as cfg_module
-from .db_qsl import confirm_qsos, recent_qsos, search_qsos
+from .db_qsl import confirm_qsos, export_countries, export_date_range, export_qsos, recent_qsos, search_qsos
 
 WEB_DIR = Path(__file__).parent.parent / "web"
 
@@ -52,8 +52,8 @@ class QslConfirmEntry(BaseModel):
     """Ein QSO-Eintrag für die QSL-Bestätigung."""
     id: int
     date: str                           # Format: YYYY-MM-DD
-    qsl_rcvd:     Optional[str] = None  # 'Y' = empfangen
-    qsl_sent:     Optional[str] = None  # 'Y' = gesendet
+    qsl_rcvd:     Optional[str] = None  # 'Y' = Karte empfangen
+    qsl_sent:     Optional[str] = None  # 'R' = angefordert (TNX QSO), 'Y' = bereits verschickt
     qsl_rcvd_via: Optional[str] = None  # 'B'=Bureau, 'D'=Direct
     qsl_sent_via: Optional[str] = None  # 'B'=Bureau, 'D'=Direct
 
@@ -104,6 +104,57 @@ def qsl_confirm(entries: list[QslConfirmEntry]):
         raise _db_error("PUT", "/api/qsl/confirm", e)
     _log("PUT", "/api/qsl/confirm", f"{updated} QSO(s) eingetragen")
     return {"updated": updated}
+
+
+# ── Export-Endpunkte ──────────────────────────────────────────────────────────
+
+@app.get("/api/qsl/export/daterange")
+def qsl_export_daterange():
+    """Gibt ältestes und neuestes Datum der Bureau-Export-QSOs zurück."""
+    settings = cfg_module.load()
+    try:
+        result = export_date_range(settings["db_path"])
+    except Exception as e:
+        raise _db_error("GET", "/api/qsl/export/daterange", e)
+    _log("GET", "/api/qsl/export/daterange")
+    return result
+
+
+@app.get("/api/qsl/export/countries")
+def qsl_export_countries():
+    """Gibt alle Länder zurück, die im Bureau-Export vorkommen (für Filter-Dropdown)."""
+    settings = cfg_module.load()
+    try:
+        countries = export_countries(settings["db_path"])
+    except Exception as e:
+        raise _db_error("GET", "/api/qsl/export/countries", e)
+    _log("GET", "/api/qsl/export/countries", f"{len(countries)} Länder")
+    return countries
+
+
+@app.get("/api/qsl/export")
+def qsl_export(
+    date_from: Optional[str] = Query(None),
+    date_to:   Optional[str] = Query(None),
+    band:      Optional[str] = Query(None),
+    mode:      Optional[str] = Query(None),
+    country:   Optional[str] = Query(None),
+):
+    """Gibt gefilterte QSOs für den Bureau-Export zurück (qsl_sent=Q, qsl_sent_via=B)."""
+    settings = cfg_module.load()
+    try:
+        rows = export_qsos(
+            settings["db_path"],
+            date_from=date_from,
+            date_to=date_to,
+            band=band,
+            mode=mode,
+            country=country,
+        )
+    except Exception as e:
+        raise _db_error("GET", "/api/qsl/export", e)
+    _log("GET", "/api/qsl/export", f"{len(rows)} QSO(s)")
+    return rows
 
 
 # ── Konfigurations-Endpunkte ──────────────────────────────────────────────────

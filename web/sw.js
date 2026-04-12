@@ -26,6 +26,7 @@ const STATIC_ASSETS = [
   '/assets/js/modules/nav.js',
   '/assets/js/modules/dashboard.js',
   '/assets/js/modules/qsl.js',
+  '/assets/js/modules/qsl_export.js',
   '/assets/js/modules/settings.js',
 ];
 
