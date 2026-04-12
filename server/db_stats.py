@@ -324,6 +324,7 @@ def search_callsigns(
     band:        str | None = None,
     mode:        str | None = None,
     limit:       int = 500,
+    offset:      int = 0,
 ) -> list[dict]:
     """Sucht QSOs nach Rufzeichen (Teilstring oder Anfang).
 
@@ -334,7 +335,8 @@ def search_callsigns(
                   'beginning' → q%  (nur am Anfang)
     band        : optionaler Band-Filter
     mode        : optionaler Mode-Filter
-    limit       : maximale Trefferzahl (Standard 500)
+    limit       : maximale Trefferzahl pro Seite (Standard 500)
+    offset      : Anzahl zu überspringender Zeilen für Pagination
 
     Returns
     -------
@@ -362,7 +364,7 @@ def search_callsigns(
         if mode:
             sql += " AND mode = ?"
             params.append(mode)
-        sql += f" ORDER BY start_time DESC LIMIT {int(limit)}"
+        sql += f" ORDER BY start_time DESC LIMIT {int(limit)} OFFSET {int(offset)}"
         return [dict(r) for r in conn.execute(sql, params).fetchall()]
     finally:
         conn.close()

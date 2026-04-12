@@ -291,23 +291,25 @@ def stats_filters():
 
 @app.get("/api/callsigns/search")
 def callsigns_search(
-    q:           str       = Query(..., min_length=1),
-    search_mode: str       = Query('partial'),
+    q:           str        = Query(..., min_length=1),
+    search_mode: str        = Query('partial'),
     band:        str | None = Query(None),
     mode:        str | None = Query(None),
+    offset:      int        = Query(0, ge=0),
 ):
-    """Sucht QSOs nach Rufzeichen (Teilstring oder Anfang).
+    """Sucht QSOs nach Rufzeichen (Teilstring oder Anfang), seitenweise.
 
-    search_mode: 'partial' (Standard) oder 'beginning'
+    search_mode : 'partial' (Standard) oder 'beginning'
+    offset      : Anzahl zu überspringender Zeilen (Pagination)
     """
     if search_mode not in ('partial', 'beginning'):
         raise HTTPException(status_code=422, detail="search_mode muss 'partial' oder 'beginning' sein")
     settings = cfg_module.load()
     try:
-        rows = search_callsigns(settings["db_path"], q, search_mode, band, mode)
+        rows = search_callsigns(settings["db_path"], q, search_mode, band, mode, offset=offset)
     except Exception as e:
         raise _db_error("GET", f"/api/callsigns/search?q={q}", e)
-    _log("GET", f"/api/callsigns/search?q={q}", f"{len(rows)} QSO(s)")
+    _log("GET", f"/api/callsigns/search?q={q}&offset={offset}", f"{len(rows)} QSO(s)")
     return rows
 
 

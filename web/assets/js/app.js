@@ -26,7 +26,7 @@ import { loadSettings, saveSettings,
 import { initStats, selectStatsType,
          applyStatsFilter, resetStatsFilter }          from './modules/stats.js';
 import { initCallsigns, doCallsignSearch,
-         clearCallsignSearch,
+         clearCallsignSearch, loadMoreCallsigns,
          toggleCallsignSearchMode }                    from './modules/callsigns.js';
 
 // ── Panel-Callbacks registrieren ──────────────────────────────────────────────
@@ -61,6 +61,7 @@ window.applyStatsFilter         = applyStatsFilter;
 window.resetStatsFilter         = resetStatsFilter;
 window.doCallsignSearch         = doCallsignSearch;
 window.clearCallsignSearch      = clearCallsignSearch;
+window.loadMoreCallsigns        = loadMoreCallsigns;
 window.toggleCallsignSearchMode = toggleCallsignSearchMode;
 
 // ── Initialisierung ───────────────────────────────────────────────────────────

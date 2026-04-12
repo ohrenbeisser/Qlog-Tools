@@ -15,8 +15,12 @@ import { apiGet } from './api.js';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
+const PAGE_SIZE = 500;
+
 let _searchMode    = 'partial';   // 'partial' | 'beginning'
 let _filtersLoaded = false;
+let _currentOffset = 0;           // aktueller Seitenstart für "Weitere laden"
+let _totalShown    = 0;           // Gesamtzahl bereits angezeigter Zeilen
 
 // ── Öffentliche API ───────────────────────────────────────────────────────────
 
@@ -54,27 +58,48 @@ export async function doCallsignSearch() {
   const q = document.getElementById('cs-input').value.trim().toUpperCase();
   if (!q) return;
 
-  const band = document.getElementById('cs-filter-band').value;
-  const mode = document.getElementById('cs-filter-mode').value;
+  // Neue Suche → Offset zurücksetzen
+  _currentOffset = 0;
+  _totalShown    = 0;
 
   _setState('loading');
 
-  const params = new URLSearchParams({ q, search_mode: _searchMode });
-  if (band) params.set('band', band);
-  if (mode) params.set('mode', mode);
-
-  const rows = await apiGet('/api/callsigns/search?' + params.toString());
+  const rows = await _fetchPage(q, 0);
 
   if (!rows) {
     _setState('error');
     return;
   }
 
-  _renderResults(q, rows);
+  _renderResults(q, rows, /* append */ false);
+}
+
+/** Lädt die nächste Seite und hängt sie an die bestehende Tabelle an. */
+export async function loadMoreCallsigns() {
+  const q = document.getElementById('cs-input').value.trim().toUpperCase();
+  if (!q) return;
+
+  // Lade-Spinner im Button zeigen
+  const btn = document.getElementById('cs-load-more-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="md-icon md-spin">progress_activity</span>Wird geladen…';
+  }
+
+  const rows = await _fetchPage(q, _currentOffset);
+
+  if (!rows) {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span class="md-icon">expand_more</span>Weitere 500 anzeigen'; }
+    return;
+  }
+
+  _renderResults(q, rows, /* append */ true);
 }
 
 export function clearCallsignSearch() {
   document.getElementById('cs-input').value = '';
+  _currentOffset = 0;
+  _totalShown    = 0;
   _setState('idle');
 }
 
@@ -97,23 +122,59 @@ export function toggleCallsignSearchMode(btn) {
   if (q) doCallsignSearch();
 }
 
+// ── Datenabruf ────────────────────────────────────────────────────────────────
+
+async function _fetchPage(q, offset) {
+  const band = document.getElementById('cs-filter-band').value;
+  const mode = document.getElementById('cs-filter-mode').value;
+  const params = new URLSearchParams({ q, search_mode: _searchMode, offset });
+  if (band) params.set('band', band);
+  if (mode) params.set('mode', mode);
+  return apiGet('/api/callsigns/search?' + params.toString());
+}
+
 // ── Rendering ─────────────────────────────────────────────────────────────────
 
-function _renderResults(q, rows) {
-  // Kopfzeile
-  document.getElementById('cs-result-call').textContent  = q;
-  document.getElementById('cs-result-count').textContent =
-    rows.length === 500 ? '500+ QSOs' : `${rows.length} QSO${rows.length !== 1 ? 's' : ''}`;
+function _renderResults(q, rows, append) {
+  const tbody   = document.getElementById('cs-tbody');
+  const loadMore = document.getElementById('cs-load-more');
 
-  const tbody = document.getElementById('cs-tbody');
-  tbody.innerHTML = '';
+  if (!append) {
+    // Neue Suche: Tabelle leeren
+    tbody.innerHTML = '';
+    _totalShown = 0;
+    document.getElementById('cs-result-call').textContent = q;
+  }
 
-  if (rows.length === 0) {
+  if (rows.length === 0 && !append) {
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px">
       <span class="md-text-muted md-body-medium">Keine QSOs gefunden</span>
     </td></tr>`;
-  } else {
-    rows.forEach(r => tbody.appendChild(_buildRow(r)));
+    if (loadMore) loadMore.style.display = 'none';
+    _setState('results');
+    return;
+  }
+
+  rows.forEach(r => tbody.appendChild(_buildRow(r)));
+  _totalShown    += rows.length;
+  _currentOffset  = _totalShown;
+
+  // Zähler aktualisieren
+  document.getElementById('cs-result-count').textContent = `${_totalShown.toLocaleString('de-DE')} QSOs`;
+
+  // "Weitere laden"-Button: nur anzeigen wenn genau PAGE_SIZE Zeilen zurückkamen
+  // (= es könnte noch mehr geben), verstecken wenn weniger (= Ende erreicht)
+  if (loadMore) {
+    if (rows.length === PAGE_SIZE) {
+      loadMore.style.display = 'block';
+      const btn = document.getElementById('cs-load-more-btn');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="md-icon">expand_more</span>Weitere 500 anzeigen';
+      }
+    } else {
+      loadMore.style.display = 'none';
+    }
   }
 
   _setState('results');
