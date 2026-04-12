@@ -229,7 +229,7 @@
         </span>
         <span>
           <span class="legend-dot" style="background:var(--md-tertiary, #7D5260)"></span>
-          Anfordern = TNX QSO, Karte senden (setzt qsl_sent = R)
+          Angefordert = TNX QSO, Karte senden (setzt qsl_sent = R)
         </span>
       </div>
 
@@ -243,7 +243,7 @@
         <label class="md-checkbox-container">
           <input type="checkbox" id="check-all-anfrd"
                  onchange="selectAll('anfrd', this.checked)">
-          <span class="md-label-medium">Alle Anfordern</span>
+          <span class="md-label-medium">Alle Angefordert</span>
         </label>
       </div>
 
@@ -256,10 +256,9 @@
               <th class="md-th">Zeit UTC</th>
               <th class="md-th">Band</th>
               <th class="md-th">Mode</th>
-              <th class="md-th">RST Snt</th>
               <th class="md-th">RST Rcvd</th>
               <th class="md-th md-text-center">Empfangen ✓</th>
-              <th class="md-th md-text-center">Anfordern ✓</th>
+              <th class="md-th md-text-center">Angefordert ✓</th>
             </tr>
           </thead>
           <tbody id="qso-tbody"></tbody>
@@ -587,7 +586,7 @@
              style="margin-top:2px;flex-shrink:0">
       <span class="md-body-medium">Erweitert
         <span class="md-helper-text" style="display:block">
-          + FREQ, RST_RCVD, COUNTRY, COMMENT, NOTES, TX_PWR, MY_RIG, MY_ANTENNA
+          + FREQ, RST_RCVD, COMMENT, NOTES, TX_PWR, MY_RIG, MY_ANTENNA
         </span>
       </span>
     </label>

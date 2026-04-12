@@ -67,7 +67,7 @@ function _renderResults(call, data) {
   tbody.innerHTML = '';
 
   if (data.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px">
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px">
       <span class="md-text-muted md-body-medium">Keine QSOs gefunden</span></td></tr>`;
   } else {
     data.forEach(q => tbody.appendChild(_buildQsoRow(q)));
@@ -112,7 +112,6 @@ function _buildQsoRow(q) {
     <td class="md-td" style="font-family:monospace">${time}</td>
     <td class="md-td"><span class="md-chip md-chip-suggestion chip-band">${q.band ?? '—'}</span></td>
     <td class="md-td"><span class="md-chip md-chip-suggestion chip-mode">${q.mode ?? '—'}</span></td>
-    <td class="md-td" style="font-family:monospace">${q.rst_sent ?? '—'}</td>
     <td class="md-td" style="font-family:monospace">${q.rst_rcvd ?? '—'}</td>
     <td class="md-td md-text-center">
       <label class="md-checkbox-container" style="justify-content:center">
@@ -229,7 +228,7 @@ function _collectCheckedEntries(date) {
       qsl_rcvd:     rcvdNew  ? 'Y' : null,
       qsl_sent:     anfrdNew ? 'R' : null,  // 'R' = Requested (TNX QSO)
       qsl_rcvd_via: null,
-      qsl_sent_via: null,
+      qsl_sent_via: anfrdNew ? 'B' : null,
     });
   });
 

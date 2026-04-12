@@ -291,7 +291,7 @@ def export_qsos(
             SELECT id, callsign,
                    strftime('%Y-%m-%d', start_time) AS start_date,
                    strftime('%H:%M',   start_time)  AS start_utc,
-                   freq, band, mode, rst_sent, rst_rcvd, country,
+                   freq, band, mode, submode, rst_sent, rst_rcvd, country,
                    comment, notes, tx_pwr, my_rig, my_antenna,
                    qsl_rcvd, qsl_sent, qsl_sent_via
             FROM   contacts

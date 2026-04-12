@@ -22,7 +22,7 @@ Qlog-Tools ist eine Desktop-Applikation für Funkamateure, die ihr Logbuch mit Q
 - ADIF-Download direkt im Browser (kein Server-Upload)
 - Zwei Feldumfänge wählbar:
   - **Minimal** — CALL, QSO_DATE, TIME_ON, BAND, MODE, RST_SENT, QSL_RCVD, QSL_SENT, QSL_SENT_VIA
-  - **Erweitert** — zusätzlich FREQ, RST_RCVD, COUNTRY, COMMENT, NOTES, TX_PWR, MY_RIG, MY_ANTENNA
+  - **Erweitert** — zusätzlich FREQ, RST_RCVD, COMMENT, NOTES, TX_PWR, MY_RIG, MY_ANTENNA
 - Optional: QSOs nach Export automatisch als gesendet markieren (`qsl_sent = Y`)
 - `QSL_RCVD = Y` → "TNX" auf der Karte · `QSL_RCVD = N` → "PSE" (kompatibel mit [qslshop.de](https://qslshop.de))
 

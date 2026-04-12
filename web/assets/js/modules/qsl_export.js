@@ -357,7 +357,7 @@ function _buildAdif(qsos, scope) {
  * Feldumfang:
  *   Minimal:   CALL, QSO_DATE, TIME_ON, BAND, MODE, RST_SENT,
  *              QSL_RCVD, QSL_SENT, QSL_SENT_VIA
- *   Erweitert: + FREQ, RST_RCVD, COUNTRY, COMMENT, NOTES, TX_PWR, MY_RIG, MY_ANTENNA
+ *   Erweitert: + FREQ, RST_RCVD, COMMENT, NOTES, TX_PWR, MY_RIG, MY_ANTENNA
  *
  * QSL_RCVD steuert ob "TNX" (Y) oder "PSE" (N/leer) auf die Karte gedruckt wird.
  *
@@ -379,7 +379,8 @@ function _buildAdifRecord(q, scope) {
   adifField('QSO_DATE',    (q.start_date ?? '').replace(/-/g, ''));   // YYYYMMDD
   adifField('TIME_ON',     (q.start_utc  ?? '').replace(':', '') + '00'); // HHMMSS
   adifField('BAND',        q.band);
-  adifField('MODE',        q.mode);
+  // Wenn Unterbetriebsart vorhanden, diese als MODE exportieren (z. B. FT8 statt MFSK)
+  adifField('MODE',        q.submode || q.mode);
   adifField('RST_SENT',    q.rst_sent);
   // QSL_RCVD=Y → "TNX" gedruckt; N/leer → "PSE" (Quelle: qslshop.de)
   adifField('QSL_RCVD',    q.qsl_rcvd ?? 'N');
@@ -392,7 +393,6 @@ function _buildAdifRecord(q, scope) {
     const EXT_FIELD_MAP = {
       freq:        ['FREQ',       q.freq],
       rst_rcvd:    ['RST_RCVD',   q.rst_rcvd],
-      country:     ['COUNTRY',    q.country],
       comment:     ['COMMENT',    q.comment],
       notes:       ['NOTES',      q.notes],
       tx_pwr:      ['TX_PWR',     q.tx_pwr],

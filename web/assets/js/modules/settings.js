@@ -27,7 +27,6 @@ const LS_EXPORT_FIELDS = 'qlog_export_extended_fields';
 export const EXPORT_FIELDS = [
   { id: 'ef-freq',       key: 'freq',       label: 'FREQ',       desc: 'Frequenz in MHz' },
   { id: 'ef-rst-rcvd',   key: 'rst_rcvd',   label: 'RST_RCVD',   desc: 'Empfangenes Rapport' },
-  { id: 'ef-country',    key: 'country',    label: 'COUNTRY',    desc: 'Gegenstation Land' },
   { id: 'ef-comment',    key: 'comment',    label: 'COMMENT',    desc: 'Kommentar' },
   { id: 'ef-notes',      key: 'notes',      label: 'NOTES',      desc: 'Notizen' },
   { id: 'ef-tx-pwr',     key: 'tx_pwr',     label: 'TX_PWR',     desc: 'Sendeleistung (W)' },
