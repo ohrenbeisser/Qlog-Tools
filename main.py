@@ -20,11 +20,11 @@ from server import config as cfg_module
 from ui.main_window import MainWindow
 
 
-def run_server(port: int) -> None:
+def run_server(host: str, port: int) -> None:
     """Startet uvicorn mit der FastAPI-App (blockierend, läuft in eigenem Thread)."""
     uvicorn.run(
         api_module.app,
-        host="0.0.0.0",     # Alle Interfaces — ermöglicht Zugriff über LAN-IP
+        host=host,
         port=port,
         log_level="warning",  # uvicorn-eigene Logs unterdrücken; wir loggen selbst
     )
@@ -33,10 +33,11 @@ def run_server(port: int) -> None:
 def main() -> None:
     """Hauptfunktion: Server starten, Browser öffnen, Tkinter-Fenster anzeigen."""
     settings = cfg_module.load()
-    port = settings["port"]
+    port     = settings["port"]
+    host     = "0.0.0.0" if settings["bind_all"] else "127.0.0.1"
 
     # FastAPI in eigenem Thread (daemon → endet mit dem Hauptprozess)
-    server_thread = threading.Thread(target=run_server, args=(port,), daemon=True)
+    server_thread = threading.Thread(target=run_server, args=(host, port), daemon=True)
     server_thread.start()
 
     # Ersten Log-Eintrag manuell einstellen (uvicorn schreibt nicht in log_queue)

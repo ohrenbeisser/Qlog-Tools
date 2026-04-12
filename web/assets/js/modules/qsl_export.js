@@ -5,14 +5,31 @@
  * Alle Filter sind optional. Die Tabelle lädt erst nach Klick auf "Anwenden".
  * Einzelne QSOs können per Checkbox vom Export ausgeschlossen werden.
  *
+ * Beim Klick auf "ADIF herunterladen" öffnet sich ein Dialog mit zwei Optionen:
+ *   - "Als gesendet markieren" (qsl_sent='Y' in der DB) — per Switch
+ *   - Feldumfang: Minimal oder Erweitert                — per Radio-Button
+ * Beide Einstellungen werden in LocalStorage gespeichert.
+ *
  * Öffentliche API (via window.* in app.js exponiert):
  *   initExport()         — Lädt Länder-Dropdown beim ersten Tab-Öffnen
  *   applyExportFilter()  — Lädt gefilterte QSOs in die Tabelle
  *   resetExportFilter()  — Setzt Filter zurück und leert die Tabelle
- *   downloadAdif()       — Exportiert angezeigte (nicht abgehakte) QSOs als ADIF
+ *   downloadAdif()       — Öffnet Export-Dialog
+ *   updateExportCount()  — Aktualisiert Zähler (von onclick in HTML aufgerufen)
  */
 
-import { apiGet } from './api.js';
+import { apiGet, apiPut } from './api.js';
+import { getExportExtendedFields } from './settings.js';
+
+// ── Konstanten ────────────────────────────────────────────────────────────────
+
+/** LocalStorage-Schlüssel für persistierte Dialog-Einstellungen. */
+const LS_MARK_SENT = 'qlog_export_mark_sent';
+const LS_SCOPE     = 'qlog_export_scope';
+
+/** Gültige Werte für den Feldumfang. */
+const SCOPE_MINIMAL  = 'minimal';
+const SCOPE_EXTENDED = 'extended';
 
 // ── Zustand ───────────────────────────────────────────────────────────────────
 
@@ -22,6 +39,9 @@ let _currentQsos = [];
 /** Verhindert mehrfaches Laden der Länderliste. */
 let _countriesLoaded = false;
 
+/** Einmalig registrierter Dialog-Listener. */
+let _dialogInitialized = false;
+
 // ── Initialisierung ───────────────────────────────────────────────────────────
 
 /**
@@ -30,6 +50,7 @@ let _countriesLoaded = false;
  */
 export async function initExport() {
   if (_countriesLoaded) return;
+  _initDialog();
   try {
     const [countries, range] = await Promise.all([
       apiGet('/api/qsl/export/countries'),
@@ -42,6 +63,32 @@ export async function initExport() {
     // Nicht kritisch — Felder bleiben leer, Filter funktioniert trotzdem
     console.warn('Export-Initialisierung fehlgeschlagen:', err.message);
   }
+}
+
+/**
+ * Registriert die Button-Listener im Export-Dialog (einmalig).
+ * Lädt außerdem gespeicherte Einstellungen aus LocalStorage in die Steuerelemente.
+ */
+function _initDialog() {
+  if (_dialogInitialized) return;
+  _dialogInitialized = true;
+
+  document.getElementById('exp-dlg-cancel').addEventListener('click', () => {
+    MDesign.Dialog.close('#export-options-dialog');
+  });
+
+  document.getElementById('exp-dlg-confirm').addEventListener('click', () => {
+    _onDialogConfirm();
+  });
+
+  // Einstellungen aus LocalStorage laden
+  const markSent = localStorage.getItem(LS_MARK_SENT) !== 'false';  // default: true
+  const scope    = localStorage.getItem(LS_SCOPE) ?? SCOPE_MINIMAL;
+
+  document.getElementById('exp-dlg-mark-sent').checked = markSent;
+  document.getElementById(
+    scope === SCOPE_EXTENDED ? 'exp-dlg-scope-extended' : 'exp-dlg-scope-minimal'
+  ).checked = true;
 }
 
 /**
@@ -198,39 +245,97 @@ export function updateExportCount() {
 /** Alias für den initialen Aufruf nach dem Rendern. */
 function _updateExportCount() { updateExportCount(); }
 
-// ── ADIF-Export ───────────────────────────────────────────────────────────────
+// ── ADIF-Dialog ───────────────────────────────────────────────────────────────
 
 /**
- * Generiert eine ADIF-Datei aus den aktivierten Zeilen und löst den
- * Browser-Download aus. Es wird kein Server-Request benötigt — die
- * Daten liegen bereits in _currentQsos.
+ * Öffnet den Export-Dialog. Wird bei Klick auf "ADIF herunterladen" aufgerufen.
+ * Prüft vorher ob überhaupt QSOs ausgewählt sind.
  */
 export function downloadAdif() {
-  const selectedIds = new Set(
-    [...document.querySelectorAll('#exp-tbody tr')]
-      .filter(tr => tr.querySelector('.cb-export')?.checked)
-      .map(tr => parseInt(tr.dataset.id, 10))
-  );
+  const selectedIds = _getSelectedIds();
 
-  const qsos = _currentQsos.filter(q => selectedIds.has(q.id));
-
-  if (qsos.length === 0) {
+  if (selectedIds.size === 0) {
     MDesign.Snackbar.show({ message: 'Keine QSOs ausgewählt', duration: 3000 });
     return;
   }
 
-  const adif = _buildAdif(qsos);
+  MDesign.Dialog.open('#export-options-dialog');
+}
+
+/**
+ * Wird beim Klick auf "Exportieren" im Dialog ausgeführt.
+ * Liest Dialog-Einstellungen, speichert sie, schließt den Dialog
+ * und führt den Export durch.
+ */
+async function _onDialogConfirm() {
+  const markSent = document.getElementById('exp-dlg-mark-sent').checked;
+  const scope    = document.querySelector('input[name="exp-dlg-scope"]:checked')?.value
+                   ?? SCOPE_MINIMAL;
+
+  // Präferenzen für künftige Sitzungen speichern
+  localStorage.setItem(LS_MARK_SENT, String(markSent));
+  localStorage.setItem(LS_SCOPE,     scope);
+
+  MDesign.Dialog.close('#export-options-dialog');
+
+  const selectedIds = _getSelectedIds();
+  const qsos        = _currentQsos.filter(q => selectedIds.has(q.id));
+
+  if (qsos.length === 0) return;  // Kann nach Dialog-Schließen nicht mehr passieren, aber sicher ist sicher
+
+  // ADIF-Datei generieren und herunterladen
+  const adif = _buildAdif(qsos, scope);
   _triggerDownload(adif, _buildFilename());
+
+  // Optional: QSOs in DB als gesendet markieren
+  if (markSent) {
+    await _markSentInDb(qsos.map(q => q.id));
+  }
+
   MDesign.Snackbar.show({ message: `✓ ${qsos.length} QSO(s) exportiert`, duration: 3000 });
 }
+
+/**
+ * Gibt die IDs aller aktuell angehakten Tabellenzeilen als Set zurück.
+ *
+ * @returns {Set<number>}
+ */
+function _getSelectedIds() {
+  return new Set(
+    [...document.querySelectorAll('#exp-tbody tr')]
+      .filter(tr => tr.querySelector('.cb-export')?.checked)
+      .map(tr => parseInt(tr.dataset.id, 10))
+  );
+}
+
+/**
+ * Ruft PUT /api/qsl/mark_sent auf und setzt qsl_sent='Y' für die exportierten QSOs.
+ * Fehler werden im Snackbar angezeigt, brechen den Export aber nicht ab.
+ *
+ * @param {number[]} ids
+ */
+async function _markSentInDb(ids) {
+  const date = new Date().toISOString().split('T')[0];
+  try {
+    await apiPut('/api/qsl/mark_sent', { ids, date });
+  } catch (err) {
+    MDesign.Snackbar.show({
+      message: 'DB-Markierung fehlgeschlagen: ' + err.message,
+      duration: 5000,
+    });
+  }
+}
+
+// ── ADIF-Generierung ──────────────────────────────────────────────────────────
 
 /**
  * Baut den ADIF-String aus einer Liste von QSO-Objekten.
  *
  * @param {Object[]} qsos
+ * @param {'minimal'|'extended'} scope
  * @returns {string} Vollständiger ADIF-Inhalt
  */
-function _buildAdif(qsos) {
+function _buildAdif(qsos, scope) {
   const lines = [
     'ADIF Export — Qlog-Tools',
     `<ADIF_VER:5>3.1.4`,
@@ -240,8 +345,7 @@ function _buildAdif(qsos) {
   ];
 
   qsos.forEach(q => {
-    const record = _buildAdifRecord(q);
-    lines.push(record + '<EOR>', '');
+    lines.push(_buildAdifRecord(q, scope), '<EOR>', '');
   });
 
   return lines.join('\n');
@@ -250,30 +354,57 @@ function _buildAdif(qsos) {
 /**
  * Baut einen einzelnen ADIF-Record aus einem QSO-Objekt.
  *
+ * Feldumfang:
+ *   Minimal:   CALL, QSO_DATE, TIME_ON, BAND, MODE, RST_SENT,
+ *              QSL_RCVD, QSL_SENT, QSL_SENT_VIA
+ *   Erweitert: + FREQ, RST_RCVD, COUNTRY, COMMENT, NOTES, TX_PWR, MY_RIG, MY_ANTENNA
+ *
+ * QSL_RCVD steuert ob "TNX" (Y) oder "PSE" (N/leer) auf die Karte gedruckt wird.
+ *
  * @param {Object} q
+ * @param {'minimal'|'extended'} scope
  * @returns {string}
  */
-function _buildAdifRecord(q) {
+function _buildAdifRecord(q, scope) {
   const fields = [];
 
   const adifField = (tag, value) => {
-    if (!value) return;
+    if (value == null || value === '') return;
     const v = String(value);
     fields.push(`<${tag}:${v.length}>${v}`);
   };
 
-  adifField('CALL',     q.callsign);
-  adifField('QSO_DATE', (q.start_date ?? '').replace(/-/g, ''));  // YYYYMMDD
-  adifField('TIME_ON',  (q.start_utc  ?? '').replace(':', '') + '00');  // HHMMSS
-  adifField('BAND',     q.band);
-  adifField('MODE',     q.mode);
-  adifField('RST_SENT', q.rst_sent);
-  adifField('RST_RCVD', q.rst_rcvd);
-  adifField('COUNTRY',  q.country);
-  // QSL_RCVD steuert ob "TNX" (Y) oder "PSE" (N/leer) auf die Karte gedruckt wird
-  adifField('QSL_RCVD',     q.qsl_rcvd ?? 'N');
-  adifField('QSL_SENT',     'Q');
-  adifField('QSL_SENT_VIA', 'B');
+  // ── Pflichtfelder (Minimal) ───────────────────────────────────────────────
+  adifField('CALL',        q.callsign);
+  adifField('QSO_DATE',    (q.start_date ?? '').replace(/-/g, ''));   // YYYYMMDD
+  adifField('TIME_ON',     (q.start_utc  ?? '').replace(':', '') + '00'); // HHMMSS
+  adifField('BAND',        q.band);
+  adifField('MODE',        q.mode);
+  adifField('RST_SENT',    q.rst_sent);
+  // QSL_RCVD=Y → "TNX" gedruckt; N/leer → "PSE" (Quelle: qslshop.de)
+  adifField('QSL_RCVD',    q.qsl_rcvd ?? 'N');
+  adifField('QSL_SENT',    'Q');
+  adifField('QSL_SENT_VIA','B');
+
+  // ── Erweiterte Felder (konfigurierbar in den Einstellungen) ──────────────
+  if (scope === SCOPE_EXTENDED) {
+    // Mapping: DB-Feldname → ADIF-Tagname
+    const EXT_FIELD_MAP = {
+      freq:        ['FREQ',       q.freq],
+      rst_rcvd:    ['RST_RCVD',   q.rst_rcvd],
+      country:     ['COUNTRY',    q.country],
+      comment:     ['COMMENT',    q.comment],
+      notes:       ['NOTES',      q.notes],
+      tx_pwr:      ['TX_PWR',     q.tx_pwr],
+      my_rig:      ['MY_RIG',     q.my_rig],
+      my_antenna:  ['MY_ANTENNA', q.my_antenna],
+    };
+    // Aktive Felder direkt aus LocalStorage — immer aktuell, kein Server-Call nötig
+    getExportExtendedFields().forEach(key => {
+      const entry = EXT_FIELD_MAP[key];
+      if (entry) adifField(entry[0], entry[1]);
+    });
+  }
 
   return fields.join('\n');
 }

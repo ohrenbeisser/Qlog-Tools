@@ -15,7 +15,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import config as cfg_module
-from .db_qsl import confirm_qsos, export_countries, export_date_range, export_qsos, recent_qsos, search_qsos
+from .db_qsl import (
+    confirm_qsos, export_countries, export_date_range,
+    export_qsos, mark_qsos_sent, recent_qsos, search_qsos,
+)
 
 WEB_DIR = Path(__file__).parent.parent / "web"
 
@@ -58,10 +61,17 @@ class QslConfirmEntry(BaseModel):
     qsl_sent_via: Optional[str] = None  # 'B'=Bureau, 'D'=Direct
 
 
+class MarkSentIn(BaseModel):
+    """Payload für PUT /api/qsl/mark_sent."""
+    ids:  list[int]
+    date: str          # Format: YYYY-MM-DD
+
+
 class ConfigIn(BaseModel):
     """Einstellungen-Payload für PUT /api/config."""
     db_path:           str
     port:              int
+    bind_all:          bool
     auto_open_browser: bool
     max_log_entries:   int
 
@@ -155,6 +165,22 @@ def qsl_export(
         raise _db_error("GET", "/api/qsl/export", e)
     _log("GET", "/api/qsl/export", f"{len(rows)} QSO(s)")
     return rows
+
+
+@app.put("/api/qsl/mark_sent")
+def qsl_mark_sent(data: MarkSentIn):
+    """Setzt qsl_sent='Y' + qsl_sdate für die angegebenen QSO-IDs.
+
+    Wird nach dem ADIF-Export aufgerufen, wenn der Nutzer die Option
+    'Als gesendet markieren' aktiviert hat.
+    """
+    settings = cfg_module.load()
+    try:
+        updated = mark_qsos_sent(settings["db_path"], data.ids, data.date)
+    except Exception as e:
+        raise _db_error("PUT", "/api/qsl/mark_sent", e)
+    _log("PUT", "/api/qsl/mark_sent", f"{updated} QSO(s) als gesendet markiert")
+    return {"updated": updated}
 
 
 # ── Konfigurations-Endpunkte ──────────────────────────────────────────────────

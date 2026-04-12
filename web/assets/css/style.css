@@ -11,6 +11,13 @@
   padding: 28px 24px;
 }
 
+/* App Bar sticky — bleibt beim Scrollen oben fixiert */
+.md-app-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
 /* App Bar: Theme-Toggle-Button rechtsbündig */
 .app-bar-spacer { margin-left: auto; }
 
@@ -248,6 +255,39 @@
   align-items: center;
   justify-content: space-between;
   margin-top: 20px;
+}
+
+/* ── Einstellungen ───────────────────────────────────────────────────────── */
+
+/* DB-Pfad-Zeile: Textfeld + Browse-Button nebeneinander */
+.settings-db-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 6px;
+}
+
+/* Browse-Button: quadratisch, Höhe passend zum md-text-field */
+.settings-db-browse {
+  flex-shrink: 0;
+  min-width: unset;
+  padding: 0 12px;
+  height: 56px;   /* gleiche Höhe wie md-text-field */
+}
+
+/* Export-Feldliste: Checkboxen untereinander mit Abstand */
+.settings-export-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Einzelnes Feld: Checkbox + Label + Beschreibung */
+.settings-export-field {
+  align-items: flex-start;
+}
+.settings-export-field span:first-of-type {
+  margin-top: 2px;  /* vertikale Ausrichtung mit Checkbox */
 }
 
 /* ── Über-Panel ──────────────────────────────────────────────────────────── */

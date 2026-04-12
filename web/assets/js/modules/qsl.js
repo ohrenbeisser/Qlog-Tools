@@ -98,9 +98,13 @@ function _buildQsoRow(q) {
   const time        = q.start_utc  ?? '—';
   const alreadyRcvd = q.qsl_rcvd === 'Y';
   const alreadySent = q.qsl_sent  === 'Y';  // nur 'Y' sperrt, nicht 'R'
+  // 'R' = Karte bereits angefordert — Checkbox vorbelegen, aber editierbar lassen
+  const anfrdPrefill = q.qsl_sent === 'R';
 
   const tr = document.createElement('tr');
   if (alreadyRcvd && alreadySent) tr.classList.add('row-confirmed');
+  // Zeile hervorheben wenn bereits angefordert (visuelles Feedback ohne Sperre)
+  if (anfrdPrefill && !alreadyRcvd) tr.classList.add('row-selected');
   tr.dataset.id = q.id;
 
   tr.innerHTML = `
@@ -119,7 +123,7 @@ function _buildQsoRow(q) {
     </td>
     <td class="md-td md-text-center">
       <label class="md-checkbox-container" style="justify-content:center">
-        <input type="checkbox" class="cb-anfrd" ${alreadySent ? 'checked disabled' : ''}
+        <input type="checkbox" class="cb-anfrd" ${alreadySent ? 'checked disabled' : anfrdPrefill ? 'checked' : ''}
           onchange="updateCount(); highlightRow(this)">
         <span></span>
       </label>
@@ -233,7 +237,9 @@ function _collectCheckedEntries(date) {
 }
 
 /**
- * Deaktiviert alle aktivierten Checkboxen in der Tabelle und dimmt ihre Zeilen.
+ * Sperrt Rcvd-Checkboxen nach dem Submit (unveränderlich).
+ * Anfrd-Checkboxen bleiben angehakt und editierbar — 'R' soll als
+ * gespeicherter Status sichtbar bleiben.
  * Wird nach erfolgreichem Submit aufgerufen.
  */
 function _lockSubmittedRows() {
@@ -243,19 +249,17 @@ function _lockSubmittedRows() {
     if (!rcvd || !anfrd) return;
 
     // Rcvd abschliessen: Empfang ist unveränderlich → sperren
-    if (rcvd.checked) {
+    if (rcvd.checked && !rcvd.disabled) {
       rcvd.disabled = true;
     }
-    // Anfrd NICHT sperren: 'R' kann erneut gesetzt werden (z. B. zweiter Export)
-    // Checkbox nur optisch zurücksetzen damit sie wieder wählbar ist
-    anfrd.checked = false;
+    // Anfrd NICHT sperren: 'R' bleibt angehakt (zeigt gespeicherten Status),
+    // kann aber erneut aktiviert/deaktiviert werden.
 
-    // Zeile dimmen wenn beide Seiten abgeschlossen (rcvd=Y gesetzt, anfrd abgehakt)
-    const bothDone = rcvd.checked && rcvd.disabled;
-    if (bothDone) {
+    // Zeile dimmen nur wenn rcvd=Y gesetzt und sent=Y (beide final abgeschlossen)
+    if (rcvd.checked && rcvd.disabled && anfrd.checked && anfrd.disabled) {
       tr.classList.add('row-confirmed');
+      tr.classList.remove('row-selected');
     }
-    tr.classList.remove('row-selected');
   });
 
   document.getElementById('check-all-rcvd').checked  = false;

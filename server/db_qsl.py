@@ -149,6 +149,43 @@ def _update_single_qso(conn: sqlite3.Connection, e: dict) -> int:
     return cursor.rowcount
 
 
+# ── Schreiben: Export-Nachbearbeitung ─────────────────────────────────────────
+
+def mark_qsos_sent(db_path: str, ids: list[int], date: str) -> int:
+    """Setzt qsl_sent='Y' und qsl_sdate=date für eine Liste von QSO-IDs.
+
+    Wird nach dem ADIF-Export aufgerufen, wenn der Nutzer "Als gesendet markieren"
+    aktiviert hat. Entspricht dem Status "Karte ist körperlich ins Bureau gegangen".
+
+    Parameters
+    ----------
+    ids  : Liste der Primärschlüssel (contacts.id)
+    date : Sendedatum im Format YYYY-MM-DD
+
+    Returns
+    -------
+    Anzahl tatsächlich geänderter Zeilen.
+    """
+    if not ids:
+        return 0
+
+    # Parametrisiertes IN-Prädikat: ein Platzhalter pro ID
+    placeholders = ",".join("?" * len(ids))
+    conn = get_connection(db_path)
+    try:
+        cursor = conn.execute(
+            f"UPDATE contacts SET qsl_sent = 'Y', qsl_sdate = ? WHERE id IN ({placeholders})",
+            [date, *ids],
+        )
+        conn.commit()
+        return cursor.rowcount
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 # ── Export-Abfragen ───────────────────────────────────────────────────────────
 
 def export_date_range(db_path: str) -> dict:
@@ -254,7 +291,8 @@ def export_qsos(
             SELECT id, callsign,
                    strftime('%Y-%m-%d', start_time) AS start_date,
                    strftime('%H:%M',   start_time)  AS start_utc,
-                   band, mode, rst_sent, rst_rcvd, country,
+                   freq, band, mode, rst_sent, rst_rcvd, country,
+                   comment, notes, tx_pwr, my_rig, my_antenna,
                    qsl_rcvd, qsl_sent, qsl_sent_via
             FROM   contacts
             WHERE  {where}

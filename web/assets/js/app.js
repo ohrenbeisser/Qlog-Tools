@@ -21,7 +21,8 @@ import { initQsl, doSearch, clearSearch,
 import { initExport, applyExportFilter,
          resetExportFilter, updateExportCount,
          downloadAdif }                               from './modules/qsl_export.js';
-import { loadSettings, saveSettings }                 from './modules/settings.js';
+import { loadSettings, saveSettings,
+         switchSettingsTab }                           from './modules/settings.js';
 
 // ── Panel-Callbacks registrieren ──────────────────────────────────────────────
 // Einstellungen werden nur geladen, wenn das Panel tatsächlich geöffnet wird.
@@ -47,6 +48,7 @@ window.resetExportFilter = resetExportFilter;
 window.updateExportCount = updateExportCount;
 window.downloadAdif      = downloadAdif;
 window.saveSettings      = saveSettings;
+window.switchSettingsTab = switchSettingsTab;
 
 // ── Initialisierung ───────────────────────────────────────────────────────────
 initThemeToggle();  // Theme-Toggle-Button aktivieren
