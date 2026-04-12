@@ -173,6 +173,12 @@ class MainWindow:
                         variable=self._auto_open_var).grid(
             row=2, column=0, columnspan=2, sticky=tk.W, **pad)
 
+        self._bind_all_var = tk.BooleanVar(value=self._settings["bind_all"])
+        ttk.Checkbutton(group,
+                        text="Von außen erreichbar (LAN-Zugriff, 0.0.0.0) — Neustart nötig",
+                        variable=self._bind_all_var).grid(
+            row=3, column=0, columnspan=2, sticky=tk.W, **pad)
+
     def _build_settings_save_row(self, parent: ttk.Frame):
         """Unterste Zeile im Einstellungen-Tab: Bestätigungstext + Speichern-Button."""
         row = ttk.Frame(parent)
@@ -258,6 +264,7 @@ class MainWindow:
         new_settings = {
             "db_path":           self._db_path_var.get(),
             "port":              self._port_var.get(),
+            "bind_all":          self._bind_all_var.get(),
             "auto_open_browser": self._auto_open_var.get(),
             "max_log_entries":   self._max_log_var.get(),
         }

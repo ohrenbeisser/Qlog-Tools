@@ -8,7 +8,6 @@ sodass API und Frontend auf demselben Port laufen (kein CORS nötig).
 
 import queue
 from pathlib import Path
-from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
@@ -54,11 +53,11 @@ def _db_error(method: str, path: str, exc: Exception) -> HTTPException:
 class QslConfirmEntry(BaseModel):
     """Ein QSO-Eintrag für die QSL-Bestätigung."""
     id: int
-    date: str                           # Format: YYYY-MM-DD
-    qsl_rcvd:     Optional[str] = None  # 'Y' = Karte empfangen
-    qsl_sent:     Optional[str] = None  # 'R' = angefordert (TNX QSO), 'Y' = bereits verschickt
-    qsl_rcvd_via: Optional[str] = None  # 'B'=Bureau, 'D'=Direct
-    qsl_sent_via: Optional[str] = None  # 'B'=Bureau, 'D'=Direct
+    date: str                        # Format: YYYY-MM-DD
+    qsl_rcvd:     str | None = None  # 'Y' = Karte empfangen
+    qsl_sent:     str | None = None  # 'R' = angefordert (TNX QSO), 'Y' = bereits verschickt
+    qsl_rcvd_via: str | None = None  # 'B'=Bureau, 'D'=Direct
+    qsl_sent_via: str | None = None  # 'B'=Bureau, 'D'=Direct
 
 
 class MarkSentIn(BaseModel):
@@ -144,11 +143,11 @@ def qsl_export_countries():
 
 @app.get("/api/qsl/export")
 def qsl_export(
-    date_from: Optional[str] = Query(None),
-    date_to:   Optional[str] = Query(None),
-    band:      Optional[str] = Query(None),
-    mode:      Optional[str] = Query(None),
-    country:   Optional[str] = Query(None),
+    date_from: str | None = Query(None),
+    date_to:   str | None = Query(None),
+    band:      str | None = Query(None),
+    mode:      str | None = Query(None),
+    country:   str | None = Query(None),
 ):
     """Gibt gefilterte QSOs für den Bureau-Export zurück (qsl_sent=Q, qsl_sent_via=B)."""
     settings = cfg_module.load()

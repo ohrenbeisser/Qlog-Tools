@@ -31,6 +31,22 @@ const LS_SCOPE     = 'qlog_export_scope';
 const SCOPE_MINIMAL  = 'minimal';
 const SCOPE_EXTENDED = 'extended';
 
+/**
+ * Mapping von LocalStorage-Feldschlüsseln auf [ADIF-Tag, QSO-Eigenschaft].
+ * Wird bei jedem ADIF-Record genutzt — als Modulkonstante einmalig erzeugt.
+ *
+ * Schlüssel: identisch mit den `key`-Werten in settings.js:EXPORT_FIELDS.
+ */
+const EXT_FIELD_MAP = {
+  freq:       ['FREQ',       'freq'],
+  rst_rcvd:   ['RST_RCVD',   'rst_rcvd'],
+  comment:    ['COMMENT',    'comment'],
+  notes:      ['NOTES',      'notes'],
+  tx_pwr:     ['TX_PWR',     'tx_pwr'],
+  my_rig:     ['MY_RIG',     'my_rig'],
+  my_antenna: ['MY_ANTENNA', 'my_antenna'],
+};
+
 // ── Zustand ───────────────────────────────────────────────────────────────────
 
 /** Aktuell geladene QSO-Liste (wird für den ADIF-Export genutzt). */
@@ -135,7 +151,7 @@ export async function applyExportFilter() {
     }
 
     _renderExportTable(data);
-    _updateExportCount();
+    updateExportCount();
     _showExportState('table');
   } catch (err) {
     MDesign.Snackbar.show({ message: 'Fehler: ' + err.message, duration: 4000 });
@@ -234,6 +250,7 @@ function _buildExportRow(q) {
 
 /**
  * Aktualisiert den Zähler unter der Tabelle (ausgewählte / gesamt).
+ * Wird sowohl intern (nach Render) als auch vom onclick im HTML aufgerufen.
  */
 export function updateExportCount() {
   const total    = document.querySelectorAll('.cb-export').length;
@@ -241,9 +258,6 @@ export function updateExportCount() {
   document.getElementById('exp-count').textContent =
     `${selected} von ${total} QSOs zum Export ausgewählt`;
 }
-
-/** Alias für den initialen Aufruf nach dem Rendern. */
-function _updateExportCount() { updateExportCount(); }
 
 // ── ADIF-Dialog ───────────────────────────────────────────────────────────────
 
@@ -389,20 +403,11 @@ function _buildAdifRecord(q, scope) {
 
   // ── Erweiterte Felder (konfigurierbar in den Einstellungen) ──────────────
   if (scope === SCOPE_EXTENDED) {
-    // Mapping: DB-Feldname → ADIF-Tagname
-    const EXT_FIELD_MAP = {
-      freq:        ['FREQ',       q.freq],
-      rst_rcvd:    ['RST_RCVD',   q.rst_rcvd],
-      comment:     ['COMMENT',    q.comment],
-      notes:       ['NOTES',      q.notes],
-      tx_pwr:      ['TX_PWR',     q.tx_pwr],
-      my_rig:      ['MY_RIG',     q.my_rig],
-      my_antenna:  ['MY_ANTENNA', q.my_antenna],
-    };
-    // Aktive Felder direkt aus LocalStorage — immer aktuell, kein Server-Call nötig
+    // Aktive Felder aus LocalStorage lesen — immer aktuell, kein Server-Call nötig
     getExportExtendedFields().forEach(key => {
       const entry = EXT_FIELD_MAP[key];
-      if (entry) adifField(entry[0], entry[1]);
+      // entry[0] = ADIF-Tag, entry[1] = DB-Feldname → Wert aus QSO-Objekt lesen
+      if (entry) adifField(entry[0], q[entry[1]]);
     });
   }
 

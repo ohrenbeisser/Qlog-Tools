@@ -1,5 +1,5 @@
 Package: qlog-tools
-Version: 0.2.0
+Version: 0.2.1
 Section: hamradio
 Priority: optional
 Architecture: amd64

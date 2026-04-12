@@ -6,7 +6,6 @@ nach Gebrauch wieder (kein Connection-Pooling nötig, da SQLite).
 """
 
 import sqlite3
-from typing import Optional
 from .db_base import get_connection
 
 
@@ -240,12 +239,12 @@ def export_countries(db_path: str) -> list[str]:
 
 
 def export_qsos(
-    db_path:    str,
-    date_from:  str | None = None,
-    date_to:    str | None = None,
-    band:       str | None = None,
-    mode:       str | None = None,
-    country:    str | None = None,
+    db_path:   str,
+    date_from: str | None = None,
+    date_to:   str | None = None,
+    band:      str | None = None,
+    mode:      str | None = None,
+    country:   str | None = None,
 ) -> list[dict]:
     """QSOs für den Bureau-Export: qsl_sent='Q' AND qsl_sent_via='B'.
 

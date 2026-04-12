@@ -12,7 +12,7 @@ Qlog-Tools ist eine Desktop-Applikation für Funkamateure, die ihr Logbuch mit Q
 - Rufzeichen eingeben → alle QSOs werden aufgelistet
 - Pro QSO einzeln oder per "Alle"-Button auswählen:
   - **Empfangen** — setzt `qsl_rcvd = Y` + Eingangsdatum
-  - **Anfordern** — setzt `qsl_sent = R` (TNX QSO, Karte wird angefordert)
+  - **Angefordert** — setzt `qsl_sent = R` + `qsl_sent_via = B` (TNX QSO, Karte wird angefordert)
 - Bereits bestätigte QSOs werden abgedimmt und gesperrt
 
 ### QSL Bureau-Export
@@ -22,16 +22,17 @@ Qlog-Tools ist eine Desktop-Applikation für Funkamateure, die ihr Logbuch mit Q
 - ADIF-Download direkt im Browser (kein Server-Upload)
 - Zwei Feldumfänge wählbar:
   - **Minimal** — CALL, QSO_DATE, TIME_ON, BAND, MODE, RST_SENT, QSL_RCVD, QSL_SENT, QSL_SENT_VIA
-  - **Erweitert** — zusätzlich FREQ, RST_RCVD, COMMENT, NOTES, TX_PWR, MY_RIG, MY_ANTENNA
+  - **Erweitert** — zusätzlich FREQ, RST_RCVD, COMMENT, NOTES, TX_PWR, MY_RIG, MY_ANTENNA (konfigurierbar)
 - Optional: QSOs nach Export automatisch als gesendet markieren (`qsl_sent = Y`)
 - `QSL_RCVD = Y` → "TNX" auf der Karte · `QSL_RCVD = N` → "PSE" (kompatibel mit [qslshop.de](https://qslshop.de))
 
 ### Weitere Features
 - **Dashboard** — zeigt die letzten 20 QSOs auf einen Blick
 - **Einstellungen** — Export-Feldauswahl im Browser (LocalStorage), Server-Konfiguration im Tkinter-Fenster
+- **SUBMODE-Unterstützung** — wenn Qlog eine Unterbetriebsart speichert (z. B. FT8 unter MFSK), wird diese im ADIF-Export als MODE ausgegeben
+- **LAN-Zugriff** — optionaler Zugriff vom Smartphone oder Tablet im Heimnetz (Einstellung im Tkinter-Fenster)
 - **Dark Mode** — Material Design 3, vollständig responsiv
 - **PWA** — läuft im Browser, installierbar, funktioniert offline (Service Worker)
-- **LAN-Zugriff** — optionaler Zugriff vom Smartphone oder Tablet im Heimnetz
 
 ---
 
@@ -51,10 +52,10 @@ Das `.deb`-Paket installiert die App inklusive Python-Abhängigkeiten automatisc
 
 ```bash
 # Paket herunterladen (aus GitHub Releases)
-wget https://github.com/ohrenbeisser/Qlog-Tools/releases/latest/download/qlog-tools_0.2.0_amd64.deb
+wget https://github.com/ohrenbeisser/Qlog-Tools/releases/latest/download/qlog-tools_0.2.1_amd64.deb
 
 # Installieren
-sudo dpkg -i qlog-tools_0.2.0_amd64.deb
+sudo dpkg -i qlog-tools_0.2.1_amd64.deb
 
 # Abhängigkeiten nachziehen falls nötig
 sudo apt install -f
@@ -128,7 +129,7 @@ Werden im Tkinter-Fenster verwaltet und in `config.ini` gespeichert:
 |-------------|----------|--------------|
 | `db_path` | `~/.local/share/hamradio/QLog/qlog.db` | Pfad zur Qlog-Datenbank |
 | `port` | `8765` | HTTP-Port des lokalen Servers |
-| `bind_all` | `false` | `true` = LAN-Zugriff (0.0.0.0), `false` = nur lokal |
+| `bind_all` | `false` | `true` = LAN-Zugriff (0.0.0.0), `false` = nur lokal — Neustart nötig |
 | `auto_open_browser` | `true` | Browser beim Start automatisch öffnen |
 | `max_log_entries` | `200` | Maximale Anzahl Zeilen im Server-Log |
 
@@ -187,9 +188,15 @@ python3 main.py
 | Minor `x.1.x` | Neue Features | Bei jedem Feature, Patch → 0 |
 | Patch `x.x.1` | Bugfixes / Commits | Bei jedem Commit |
 
-Version wird in `web/index.html` gesetzt:
+Version wird an drei Stellen gesetzt:
+- `web/index.html` (`.about-version` Chip)
+- `packaging/build_deb.sh` (`VERSION=`)
+- `packaging/debian/DEBIAN/control` (`Version:`)
+
+Außerdem `CACHE_NAME` in `web/sw.js` erhöhen, um den Browser-Cache zu invalidieren.
+
 ```html
-<span class="md-chip md-chip-suggestion about-version">Version 0.2.0</span>
+<span class="md-chip md-chip-suggestion about-version">Version 0.2.1</span>
 ```
 
 ---
