@@ -1,29 +1,43 @@
 /**
- * app.js — Einstiegspunkt.
- * Importiert alle Module, initialisiert die App und
- * exponiert die vom HTML benötigten Funktionen global.
+ * app.js — Einstiegspunkt der Qlog-Tools PWA.
+ *
+ * Aufgaben:
+ *   1. Alle Module importieren
+ *   2. Panel-Callbacks registrieren (Lazy-Loading je Panel)
+ *   3. Globale Funktionen exponieren (benötigt von onclick-Attributen im HTML)
+ *   4. App initialisieren
+ *
+ * Warum globale Funktionen (window.*)?
+ *   ES-Module haben keinen globalen Scope. Da das HTML onclick="doSearch()"
+ *   verwendet, müssen die Funktionen explizit auf window gesetzt werden.
+ *   Alternative wäre addEventListener() im JS — das würde das HTML aber komplexer machen.
  */
 
-import { showPanel, initThemeToggle } from './modules/nav.js';
-import { loadRecentQsos }             from './modules/dashboard.js';
+import { showPanel, initThemeToggle, panelCallbacks } from './modules/nav.js';
+import { loadRecentQsos }                             from './modules/dashboard.js';
 import { initQsl, doSearch, clearSearch,
          selectAll, highlightRow,
-         updateCount, doSubmit }      from './modules/qsl.js';
-import { loadSettings, saveSettings } from './modules/settings.js';
+         updateCount, doSubmit }                      from './modules/qsl.js';
+import { loadSettings, saveSettings }                 from './modules/settings.js';
 
-// ── Globale Funktionen (werden von onclick-Attributen im HTML aufgerufen) ─────
-window.showPanel     = showPanel;
+// ── Panel-Callbacks registrieren ──────────────────────────────────────────────
+// Einstellungen werden nur geladen, wenn das Panel tatsächlich geöffnet wird.
+// Start-Panel: bei erneutem Öffnen die Tabelle aktualisieren.
+panelCallbacks.settings = loadSettings;
+panelCallbacks.start    = loadRecentQsos;
+
+// ── Globale Funktionen (von HTML onclick-Attributen aufgerufen) ───────────────
+window.showPanel      = showPanel;
 window.loadRecentQsos = loadRecentQsos;
-window.doSearch      = doSearch;
-window.clearSearch   = clearSearch;
-window.selectAll     = selectAll;
-window.highlightRow  = highlightRow;
-window.updateCount   = updateCount;
-window.doSubmit      = doSubmit;
-window.saveSettings  = saveSettings;
+window.doSearch       = doSearch;
+window.clearSearch    = clearSearch;
+window.selectAll      = selectAll;
+window.highlightRow   = highlightRow;
+window.updateCount    = updateCount;
+window.doSubmit       = doSubmit;
+window.saveSettings   = saveSettings;
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-initThemeToggle();
-initQsl();
-loadRecentQsos();
-loadSettings();
+// ── Initialisierung ───────────────────────────────────────────────────────────
+initThemeToggle();  // Theme-Toggle-Button aktivieren
+initQsl();          // Datum-Feld auf heute setzen
+loadRecentQsos();   // Starttabelle sofort laden

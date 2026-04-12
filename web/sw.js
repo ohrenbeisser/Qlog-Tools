@@ -1,5 +1,16 @@
-const CACHE = 'qlog-tools-v1';
-const ASSETS = [
+/**
+ * sw.js — Service Worker für Qlog-Tools PWA.
+ *
+ * Strategie: Cache-First für alle statischen Assets, Network-Only für /api/.
+ *
+ * Cache-Versionierung: CACHE_NAME ändern, um beim nächsten Aktivieren
+ * alle alten Caches zu löschen (z. B. nach einem Deployment).
+ */
+
+const CACHE_NAME = 'qlog-tools-v1';
+
+/** Alle statischen Dateien, die beim Install gecacht werden. */
+const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
@@ -18,23 +29,46 @@ const ASSETS = [
   '/assets/js/modules/settings.js',
 ];
 
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-  self.skipWaiting();
+/**
+ * Install: Alle Assets in den Cache laden.
+ * skipWaiting() aktiviert den neuen SW sofort (ohne auf Tab-Schliessen zu warten).
+ */
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting())
+  );
 });
 
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ));
-  self.clients.claim();
+/**
+ * Activate: Alte Cache-Versionen löschen.
+ * clients.claim() übernimmt sofort die Kontrolle über alle offenen Tabs.
+ */
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(
+        keys
+          .filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
+  );
 });
 
-self.addEventListener('fetch', e => {
-  // API-Calls niemals cachen
-  if (e.request.url.includes('/api/')) return;
+/**
+ * Fetch: Cache-First für Assets, Network-Only für API-Calls.
+ *
+ * API-Calls (/api/) werden nie gecacht, da sie dynamische Daten liefern.
+ * Alle anderen Requests werden aus dem Cache beantwortet (Offline-Fähigkeit).
+ */
+self.addEventListener('fetch', event => {
+  // API-Calls immer direkt ans Netzwerk durchleiten
+  if (event.request.url.includes('/api/')) return;
 
-  e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+  event.respondWith(
+    caches.match(event.request)
+      .then(cached => cached || fetch(event.request))
   );
 });

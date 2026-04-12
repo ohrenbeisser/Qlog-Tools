@@ -1,8 +1,13 @@
 /**
- * Navigation: Drawer-Panel-Wechsel und Theme-Toggle.
+ * nav.js — Navigation: Panel-Wechsel und Theme-Toggle.
+ *
+ * Öffentliche API (via window.* in app.js exponiert):
+ *   showPanel(name, item)  — Wechselt zum gewählten Panel
+ *   initThemeToggle()      — Initialisiert den Dark/Light-Umschalter
  */
 
-const panelTitles = {
+/** Titel für die App Bar je Panel-ID. */
+const PANEL_TITLES = {
   start:     'Start',
   qsl:       'QSL',
   stats:     'Statistik',
@@ -14,18 +19,55 @@ const panelTitles = {
   about:     'Über',
 };
 
+/**
+ * Callbacks, die beim Öffnen eines bestimmten Panels aufgerufen werden.
+ * Wird von app.js nach dem Import befüllt (Lazy-Loading statt eagerly).
+ *
+ * @type {Record<string, () => void>}
+ */
+export const panelCallbacks = {};
+
+/**
+ * Wechselt zum Panel mit der angegebenen ID.
+ *
+ * - Versteckt alle anderen Panels.
+ * - Setzt den aktiven Drawer-Eintrag.
+ * - Aktualisiert den App-Bar-Titel.
+ * - Ruft einen registrierten Callback auf (z. B. Einstellungen nachladen).
+ * - Schließt den Navigation Drawer.
+ *
+ * @param {string} name       — Panel-ID (ohne 'panel-' Präfix), z. B. 'qsl'
+ * @param {HTMLElement} item  — Der angeklickte Drawer-Eintrag (für md-active)
+ */
 export function showPanel(name, item) {
+  // Alle Panels und Drawer-Einträge deaktivieren
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.md-drawer-item').forEach(i => i.classList.remove('md-active'));
+
+  // Gewähltes Panel aktivieren
   document.getElementById('panel-' + name).classList.add('active');
   item.classList.add('md-active');
-  document.getElementById('app-bar-title').textContent = panelTitles[name] || name;
+  document.getElementById('app-bar-title').textContent = PANEL_TITLES[name] ?? name;
+
+  // Optionaler Panel-Callback (z. B. Daten nachladen)
+  if (panelCallbacks[name]) {
+    panelCallbacks[name]();
+  }
+
   MDesign.Drawer.close('#main-drawer');
 }
 
+/**
+ * Initialisiert den Dark/Light-Theme-Umschalter in der App Bar.
+ *
+ * Reagiert auf:
+ * - Klick auf den Button → MDesign.Theme.toggle()
+ * - 'md-theme-change'-Event (z. B. aus MDesign ausgelöst) → Icon aktualisieren
+ */
 export function initThemeToggle() {
   const btn = document.getElementById('theme-toggle');
 
+  /** Setzt das Icon je nach aktivem Theme. */
   function updateIcon() {
     btn.querySelector('.md-icon').textContent =
       MDesign.Theme.get() === 'dark' ? 'light_mode' : 'dark_mode';
@@ -36,6 +78,7 @@ export function initThemeToggle() {
     updateIcon();
   });
 
+  // Auch auf externe Theme-Änderungen reagieren
   document.addEventListener('md-theme-change', updateIcon);
   updateIcon();
 }

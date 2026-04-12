@@ -11,58 +11,63 @@
 </head>
 <body>
 
-<!-- NAVIGATION DRAWER -->
+<!-- ══════════════════════════════════════════════════════════════════════════
+     NAVIGATION DRAWER
+     ══════════════════════════════════════════════════════════════════════════ -->
 <div class="md-drawer-backdrop" id="main-drawer-backdrop">
   <nav class="md-drawer" id="main-drawer" aria-label="Hauptnavigation">
     <div class="md-drawer-header">
       <h2 class="md-drawer-title">Qlog-Tools</h2>
     </div>
     <div class="md-drawer-content">
-      <a href="#" class="md-drawer-item md-ripple md-active" onclick="showPanel('start', this); return false">
-        <span class="md-icon">home</span>
-        Start
+      <a href="#" class="md-drawer-item md-ripple md-active"
+         onclick="showPanel('start', this); return false">
+        <span class="md-icon">home</span>Start
       </a>
-      <a href="#" class="md-drawer-item md-ripple" onclick="showPanel('qsl', this); return false">
-        <span class="md-icon">mail</span>
-        QSL
+      <a href="#" class="md-drawer-item md-ripple"
+         onclick="showPanel('qsl', this); return false">
+        <span class="md-icon">mail</span>QSL
       </a>
-      <a href="#" class="md-drawer-item md-ripple" onclick="showPanel('stats', this); return false">
-        <span class="md-icon">bar_chart</span>
-        Statistik
+      <a href="#" class="md-drawer-item md-ripple"
+         onclick="showPanel('stats', this); return false">
+        <span class="md-icon">bar_chart</span>Statistik
       </a>
-      <a href="#" class="md-drawer-item md-ripple" onclick="showPanel('callsigns', this); return false">
-        <span class="md-icon">contact_phone</span>
-        Rufzeichen
+      <a href="#" class="md-drawer-item md-ripple"
+         onclick="showPanel('callsigns', this); return false">
+        <span class="md-icon">contact_phone</span>Rufzeichen
       </a>
-      <a href="#" class="md-drawer-item md-ripple" onclick="showPanel('queries', this); return false">
-        <span class="md-icon">manage_search</span>
-        Abfragen
+      <a href="#" class="md-drawer-item md-ripple"
+         onclick="showPanel('queries', this); return false">
+        <span class="md-icon">manage_search</span>Abfragen
       </a>
-      <a href="#" class="md-drawer-item md-ripple" onclick="showPanel('export', this); return false">
-        <span class="md-icon">download</span>
-        Export
-      </a>
-      <div class="md-drawer-divider"></div>
-      <a href="#" class="md-drawer-item md-ripple" onclick="showPanel('settings', this); return false">
-        <span class="md-icon">settings</span>
-        Einstellungen
+      <a href="#" class="md-drawer-item md-ripple"
+         onclick="showPanel('export', this); return false">
+        <span class="md-icon">download</span>Export
       </a>
       <div class="md-drawer-divider"></div>
-      <a href="#" class="md-drawer-item md-ripple" onclick="showPanel('help', this); return false">
-        <span class="md-icon">help_outline</span>
-        Hilfe
+      <a href="#" class="md-drawer-item md-ripple"
+         onclick="showPanel('settings', this); return false">
+        <span class="md-icon">settings</span>Einstellungen
       </a>
-      <a href="#" class="md-drawer-item md-ripple" onclick="showPanel('about', this); return false">
-        <span class="md-icon">info</span>
-        Über
+      <div class="md-drawer-divider"></div>
+      <a href="#" class="md-drawer-item md-ripple"
+         onclick="showPanel('help', this); return false">
+        <span class="md-icon">help_outline</span>Hilfe
+      </a>
+      <a href="#" class="md-drawer-item md-ripple"
+         onclick="showPanel('about', this); return false">
+        <span class="md-icon">info</span>Über
       </a>
     </div>
   </nav>
 </div>
 
-<!-- APP BAR -->
+<!-- ══════════════════════════════════════════════════════════════════════════
+     APP BAR
+     ══════════════════════════════════════════════════════════════════════════ -->
 <header class="md-app-bar md-app-bar-surface md-elevation-1">
-  <button class="md-btn-icon md-ripple" data-md-drawer="#main-drawer" aria-label="Menü öffnen">
+  <button class="md-btn-icon md-ripple" data-md-drawer="#main-drawer"
+          aria-label="Menü öffnen">
     <span class="md-icon">menu</span>
   </button>
   <span class="md-app-bar-title" style="font-weight:500" id="app-bar-title">Start</span>
@@ -72,45 +77,52 @@
   </button>
 </header>
 
-<!-- ══════════════════════════════════════════ -->
-<!-- PANEL: START                              -->
-<!-- ══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PANEL: START
+     Zeigt die letzten 20 QSOs. Wird beim App-Start automatisch geladen.
+     ══════════════════════════════════════════════════════════════════════════ -->
 <div class="app-content tab-panel active" id="panel-start">
 
   <div class="md-d-flex md-align-center md-justify-between md-mb-lg">
     <h2 class="md-headline-small">Letzte QSOs</h2>
-    <button class="md-btn-icon md-ripple" onclick="loadRecentQsos()" aria-label="Aktualisieren">
+    <button class="md-btn-icon md-ripple" onclick="loadRecentQsos()"
+            aria-label="Aktualisieren">
       <span class="md-icon">refresh</span>
     </button>
   </div>
 
+  <!-- Lade-Zustand -->
   <div id="start-loading" style="display:none" class="empty-state">
     <span class="md-icon md-spin">progress_activity</span>
     <p class="md-text-muted">Wird geladen…</p>
   </div>
+
+  <!-- Leer-Zustand -->
   <div id="start-empty" style="display:none" class="empty-state">
     <span class="md-icon">inbox</span>
     <p class="md-text-muted">Keine QSOs gefunden</p>
   </div>
+
+  <!-- Fehler-Zustand -->
   <div id="start-error" style="display:none" class="empty-state">
     <span class="md-icon" style="color:var(--md-error,#B3261E)">error_outline</span>
     <p class="md-text-muted" id="start-error-msg">Verbindung fehlgeschlagen</p>
   </div>
 
+  <!-- Tabelle (standalone = voller border-radius, kein select-all-bar darüber) -->
   <div id="start-table-wrap" style="display:none">
-    <div class="qso-table-wrap">
-      <table class="md-table qso-table" style="width:100%">
+    <div class="qso-table-wrap standalone">
+      <table class="md-table md-table-striped qso-table" style="width:100%">
         <thead>
           <tr>
             <th class="md-th">Rufzeichen</th>
             <th class="md-th">Datum</th>
-            <th class="md-th col-time">Zeit UTC</th>
+            <th class="md-th">Zeit UTC</th>
             <th class="md-th">Band</th>
             <th class="md-th">Mode</th>
-            <th class="md-th col-rst">RST Snt</th>
-            <th class="md-th col-rst">RST Rcvd</th>
-            <th class="md-th md-text-center">Rcvd</th>
-            <th class="md-th md-text-center">Sent</th>
+            <th class="md-th">RST Snt</th>
+            <th class="md-th">RST Rcvd</th>
+            <th class="md-th">Land</th>
           </tr>
         </thead>
         <tbody id="start-tbody"></tbody>
@@ -123,11 +135,13 @@
 
 </div>
 
-<!-- ══════════════════════════════════════════ -->
-<!-- PANEL: QSL                                -->
-<!-- ══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PANEL: QSL
+     Rufzeichen suchen, QSL-Status per Checkbox eintragen.
+     ══════════════════════════════════════════════════════════════════════════ -->
 <div class="app-content tab-panel" id="panel-qsl">
 
+  <!-- Suchkarte -->
   <article class="md-card md-card-elevated md-mb-lg">
     <div class="md-card-content">
       <div class="md-d-flex md-gap-md md-align-end" style="flex-wrap:wrap">
@@ -145,23 +159,23 @@
         </div>
 
         <button class="md-btn md-btn-filled md-ripple" onclick="doSearch()">
-          <span class="md-icon">search</span>
-          Suchen
+          <span class="md-icon">search</span>Suchen
         </button>
         <button class="md-btn md-btn-outlined md-ripple" onclick="clearSearch()">
-          <span class="md-icon">clear</span>
-          Leeren
+          <span class="md-icon">clear</span>Leeren
         </button>
 
       </div>
     </div>
   </article>
 
+  <!-- Initial-Hinweis -->
   <div class="empty-state" id="empty-state">
     <span class="md-icon">mark_email_unread</span>
     <p class="md-text-muted">Rufzeichen eingeben und Suchen drücken</p>
   </div>
 
+  <!-- Ergebnis-Bereich (nach Suche sichtbar) -->
   <div id="result-area" style="display:none">
 
     <div class="md-d-flex md-align-center md-justify-between md-mb-sm">
@@ -171,6 +185,7 @@
       </span>
     </div>
 
+    <!-- Legende -->
     <div class="table-legend">
       <span>
         <span class="legend-dot" style="background:var(--md-primary, #6750A4)"></span>
@@ -182,27 +197,31 @@
       </span>
     </div>
 
+    <!-- Select-All-Leiste -->
     <div class="select-all-bar">
       <label class="md-checkbox-container">
-        <input type="checkbox" id="check-all-rcvd" onchange="selectAll('rcvd', this.checked)">
+        <input type="checkbox" id="check-all-rcvd"
+               onchange="selectAll('rcvd', this.checked)">
         <span class="md-label-medium">Alle Rcvd</span>
       </label>
       <label class="md-checkbox-container">
-        <input type="checkbox" id="check-all-sent" onchange="selectAll('sent', this.checked)">
+        <input type="checkbox" id="check-all-sent"
+               onchange="selectAll('sent', this.checked)">
         <span class="md-label-medium">Alle Sent</span>
       </label>
     </div>
 
+    <!-- QSO-Tabelle -->
     <div class="qso-table-wrap">
-      <table class="md-table qso-table" style="width:100%">
+      <table class="md-table md-table-striped qso-table" style="width:100%">
         <thead>
           <tr>
             <th class="md-th">Datum</th>
-            <th class="md-th col-time">Zeit UTC</th>
+            <th class="md-th">Zeit UTC</th>
             <th class="md-th">Band</th>
             <th class="md-th">Mode</th>
-            <th class="md-th col-rst">RST Snt</th>
-            <th class="md-th col-rst">RST Rcvd</th>
+            <th class="md-th">RST Snt</th>
+            <th class="md-th">RST Rcvd</th>
             <th class="md-th md-text-center">Rcvd ✓</th>
             <th class="md-th md-text-center">Sent ✓</th>
           </tr>
@@ -211,11 +230,11 @@
       </table>
     </div>
 
+    <!-- Submit-Leiste -->
     <div class="submit-bar">
       <p class="md-body-medium md-text-muted" id="submit-info">0 QSOs ausgewählt</p>
       <button class="md-btn md-btn-success md-ripple" onclick="doSubmit()">
-        <span class="md-icon">check_circle</span>
-        Eintragen
+        <span class="md-icon">check_circle</span>Eintragen
       </button>
     </div>
 
@@ -223,9 +242,9 @@
 
 </div>
 
-<!-- ══════════════════════════════════════════ -->
-<!-- PANEL: STATISTIK (Platzhalter)            -->
-<!-- ══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PANEL: STATISTIK (Phase 2)
+     ══════════════════════════════════════════════════════════════════════════ -->
 <div class="app-content tab-panel" id="panel-stats">
   <div class="coming-soon">
     <span class="md-icon">bar_chart</span>
@@ -235,9 +254,9 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════ -->
-<!-- PANEL: RUFZEICHEN (Platzhalter)           -->
-<!-- ══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PANEL: RUFZEICHEN (Phase 2)
+     ══════════════════════════════════════════════════════════════════════════ -->
 <div class="app-content tab-panel" id="panel-callsigns">
   <div class="coming-soon">
     <span class="md-icon">contact_phone</span>
@@ -247,9 +266,9 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════ -->
-<!-- PANEL: ABFRAGEN (Platzhalter)             -->
-<!-- ══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PANEL: ABFRAGEN (Phase 2)
+     ══════════════════════════════════════════════════════════════════════════ -->
 <div class="app-content tab-panel" id="panel-queries">
   <div class="coming-soon">
     <span class="md-icon">manage_search</span>
@@ -259,9 +278,9 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════ -->
-<!-- PANEL: EXPORT (Platzhalter)               -->
-<!-- ══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PANEL: EXPORT (Phase 2)
+     ══════════════════════════════════════════════════════════════════════════ -->
 <div class="app-content tab-panel" id="panel-export">
   <div class="coming-soon">
     <span class="md-icon">download</span>
@@ -271,9 +290,9 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════ -->
-<!-- PANEL: EINSTELLUNGEN                      -->
-<!-- ══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PANEL: EINSTELLUNGEN
+     ══════════════════════════════════════════════════════════════════════════ -->
 <div class="app-content tab-panel" id="panel-settings">
 
   <h2 class="md-headline-small md-mb-lg">Einstellungen</h2>
@@ -297,11 +316,11 @@
     <div class="md-card-content">
       <div class="md-d-flex md-gap-lg" style="flex-wrap:wrap;align-items:flex-end">
         <div class="md-text-field" style="width:120px">
-          <input type="number" id="cfg-port" placeholder=" ">
+          <input type="number" id="cfg-port" placeholder=" " min="1024" max="65535">
           <label class="md-text-field-label">Port</label>
         </div>
         <div class="md-text-field" style="width:140px">
-          <input type="number" id="cfg-max-log" placeholder=" ">
+          <input type="number" id="cfg-max-log" placeholder=" " min="10" max="2000">
           <label class="md-text-field-label">Max. Log-Einträge</label>
         </div>
       </div>
@@ -319,16 +338,15 @@
 
   <div class="md-d-flex md-justify-end">
     <button class="md-btn md-btn-filled md-ripple" onclick="saveSettings()">
-      <span class="md-icon">save</span>
-      Speichern
+      <span class="md-icon">save</span>Speichern
     </button>
   </div>
 
 </div>
 
-<!-- ══════════════════════════════════════════ -->
-<!-- PANEL: HILFE (Platzhalter)                -->
-<!-- ══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PANEL: HILFE
+     ══════════════════════════════════════════════════════════════════════════ -->
 <div class="app-content tab-panel" id="panel-help">
   <div class="coming-soon">
     <span class="md-icon">help_outline</span>
@@ -337,9 +355,9 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════ -->
-<!-- PANEL: ÜBER                               -->
-<!-- ══════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PANEL: ÜBER
+     ══════════════════════════════════════════════════════════════════════════ -->
 <div class="app-content tab-panel" id="panel-about">
   <div class="coming-soon">
     <span class="md-icon">info</span>
@@ -348,6 +366,11 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCRIPTS
+     mdesign.js muss vor app.js geladen sein (window.MDesign wird genutzt).
+     app.js ist ein ES-Modul (type="module") — lädt async, kein defer nötig.
+     ══════════════════════════════════════════════════════════════════════════ -->
 <script src="/assets/js/mdesign.js"></script>
 <script type="module" src="/assets/js/app.js"></script>
 <script>
