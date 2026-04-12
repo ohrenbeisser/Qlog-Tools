@@ -382,24 +382,265 @@
      PANEL: STATISTIK (Phase 2)
      ══════════════════════════════════════════════════════════════════════════ -->
 <div class="app-content tab-panel" id="panel-stats">
-  <div class="coming-soon">
-    <span class="md-icon">bar_chart</span>
-    <h2 class="md-headline-small">Statistik</h2>
-    <p class="md-body-medium md-text-muted">Wird in einer späteren Version integriert.</p>
-    <span class="md-chip md-chip-suggestion">Kommt bald</span>
+
+  <!-- ── Statistik-Typ-Auswahl (sticky unter App Bar) ──────────────────── -->
+  <div class="stats-type-bar">
+    <div class="stats-chips" role="group" aria-label="Statistik-Typ">
+      <button class="md-chip md-ripple stats-chip-active"
+              onclick="selectStatsType('country', this)">
+        <span class="md-icon" style="font-size:18px">public</span>Länder
+      </button>
+      <button class="md-chip md-ripple"
+              onclick="selectStatsType('band', this)">
+        <span class="md-icon" style="font-size:18px">radio</span>Bänder
+      </button>
+      <button class="md-chip md-ripple"
+              onclick="selectStatsType('mode', this)">
+        <span class="md-icon" style="font-size:18px">podcasts</span>Modes
+      </button>
+      <button class="md-chip md-ripple"
+              onclick="selectStatsType('year', this)">
+        <span class="md-icon" style="font-size:18px">calendar_today</span>Jahre
+      </button>
+      <button class="md-chip md-ripple"
+              onclick="selectStatsType('month', this)">
+        <span class="md-icon" style="font-size:18px">date_range</span>Monate
+      </button>
+      <button class="md-chip md-ripple"
+              onclick="selectStatsType('weekday', this)">
+        <span class="md-icon" style="font-size:18px">view_week</span>Wochentage
+      </button>
+      <button class="md-chip md-ripple"
+              onclick="selectStatsType('hour', this)">
+        <span class="md-icon" style="font-size:18px">schedule</span>Stunden
+      </button>
+      <button class="md-chip md-ripple"
+              onclick="selectStatsType('callsign', this)">
+        <span class="md-icon" style="font-size:18px">contact_page</span>Rufzeichen
+      </button>
+    </div>
   </div>
+
+  <!-- ── Lade-Zustand ───────────────────────────────────────────────────── -->
+  <div id="stats-loading" style="display:none" class="stats-loading">
+    <span class="md-icon md-spin">progress_activity</span>
+    <p class="md-text-muted">Wird geladen…</p>
+  </div>
+
+  <!-- ── Hauptinhalt ────────────────────────────────────────────────────── -->
+  <div id="stats-content">
+
+    <!-- Summary-Kacheln -->
+    <div class="stats-kacheln">
+      <div class="stats-kachel">
+        <span class="md-icon stats-kachel-icon">swap_calls</span>
+        <span class="stats-kachel-value" id="kachel-qsos">–</span>
+        <span class="stats-kachel-label">QSOs gesamt</span>
+      </div>
+      <div class="stats-kachel">
+        <span class="md-icon stats-kachel-icon">public</span>
+        <span class="stats-kachel-value" id="kachel-countries">–</span>
+        <span class="stats-kachel-label">Länder</span>
+      </div>
+      <div class="stats-kachel">
+        <span class="md-icon stats-kachel-icon">radio</span>
+        <span class="stats-kachel-value" id="kachel-bands">–</span>
+        <span class="stats-kachel-label">Bänder</span>
+      </div>
+      <div class="stats-kachel">
+        <span class="md-icon stats-kachel-icon">podcasts</span>
+        <span class="stats-kachel-value" id="kachel-modes">–</span>
+        <span class="stats-kachel-label">Betriebsarten</span>
+      </div>
+    </div>
+
+    <!-- Filter-Karte -->
+    <article class="md-card md-card-outlined md-mb-lg">
+      <div class="md-card-header">
+        <div class="md-card-header-text">
+          <h3 class="md-card-title">Filter</h3>
+          <p class="md-card-subtitle" id="stats-filter-subtitle">Alle QSOs · keine Filter aktiv</p>
+        </div>
+      </div>
+      <div class="md-card-content" style="padding-top:0; padding-bottom:20px">
+        <div class="stats-filter-row">
+          <div class="stats-filter-field">
+            <label class="md-text-field md-text-field-outlined" style="width:100%">
+              <input type="date" id="stats-filter-from">
+              <span class="md-label">Von</span>
+            </label>
+          </div>
+          <div class="stats-filter-field">
+            <label class="md-text-field md-text-field-outlined" style="width:100%">
+              <input type="date" id="stats-filter-to">
+              <span class="md-label">Bis</span>
+            </label>
+          </div>
+          <div class="stats-filter-field">
+            <label class="md-text-field md-text-field-outlined" style="width:100%">
+              <select id="stats-filter-band">
+                <option value="">Alle Bänder</option>
+              </select>
+              <span class="md-label">Band</span>
+            </label>
+          </div>
+          <div class="stats-filter-field">
+            <label class="md-text-field md-text-field-outlined" style="width:100%">
+              <select id="stats-filter-mode">
+                <option value="">Alle Modes</option>
+              </select>
+              <span class="md-label">Mode</span>
+            </label>
+          </div>
+          <div class="stats-filter-actions">
+            <button class="md-btn md-btn-filled md-ripple" onclick="applyStatsFilter()">
+              <span class="md-icon">filter_list</span>Anwenden
+            </button>
+            <button class="md-btn md-btn-tonal md-ripple" onclick="resetStatsFilter()">
+              Zurücksetzen
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Tabelle + Diagramm -->
+    <div class="stats-main">
+
+      <!-- Rang-Tabelle -->
+      <div class="stats-table-wrap">
+        <div class="stats-table-header">
+          <span class="stats-table-title" id="stats-table-title">Länder nach QSO-Anzahl</span>
+          <span class="stats-total-badge" id="stats-table-badge"></span>
+        </div>
+        <div class="stats-table-scroll">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th class="stats-rank">#</th>
+                <th id="stats-col-header">Land</th>
+                <th style="width:160px">QSOs</th>
+              </tr>
+            </thead>
+            <tbody id="stats-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="stats-chart-card">
+        <div class="stats-chart-header">
+          <span class="stats-chart-title" id="stats-chart-title">Top 20 Länder</span>
+          <span class="stats-chart-subtitle" id="stats-chart-sub">nach QSO-Anzahl</span>
+        </div>
+        <div class="stats-chart-body">
+          <canvas id="stats-chart"></canvas>
+        </div>
+      </div>
+
+    </div><!-- /.stats-main -->
+
+  </div><!-- /#stats-content -->
+
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
      PANEL: RUFZEICHEN (Phase 2)
      ══════════════════════════════════════════════════════════════════════════ -->
 <div class="app-content tab-panel" id="panel-callsigns">
-  <div class="coming-soon">
-    <span class="md-icon">contact_phone</span>
-    <h2 class="md-headline-small">Rufzeichen</h2>
-    <p class="md-body-medium md-text-muted">Wird in einer späteren Version integriert.</p>
-    <span class="md-chip md-chip-suggestion">Kommt bald</span>
+
+  <!-- ── Suchkarte ────────────────────────────────────────────────────────── -->
+  <article class="md-card md-card-outlined md-mb-lg">
+    <div class="md-card-content cs-search-content">
+
+      <!-- Zeile 1: Suchfeld + Modus-Toggle + Suchen-Button -->
+      <div class="cs-search-row">
+        <label class="md-text-field md-text-field-outlined cs-input-wrap">
+          <input type="text" id="cs-input" autocomplete="off" spellcheck="false"
+                 placeholder=" " class="callsign-input">
+          <span class="md-label">Rufzeichen suchen</span>
+        </label>
+        <button class="md-btn md-btn-tonal md-ripple cs-mode-btn"
+                title="Suche: Teilstring (klicken für Anfang)"
+                onclick="toggleCallsignSearchMode(this)">
+          <span class="md-icon">manage_search</span>
+          <span class="cs-mode-label">Teilstring</span>
+        </button>
+        <button class="md-btn md-btn-filled md-ripple" onclick="doCallsignSearch()">
+          <span class="md-icon">search</span>Suchen
+        </button>
+      </div>
+
+      <!-- Zeile 2: Band + Mode-Filter -->
+      <div class="cs-filter-row">
+        <label class="md-text-field md-text-field-outlined cs-filter-field">
+          <select id="cs-filter-band">
+            <option value="">Alle Bänder</option>
+          </select>
+          <span class="md-label">Band</span>
+        </label>
+        <label class="md-text-field md-text-field-outlined cs-filter-field">
+          <select id="cs-filter-mode">
+            <option value="">Alle Modes</option>
+          </select>
+          <span class="md-label">Mode</span>
+        </label>
+        <button class="md-btn md-btn-text md-ripple" onclick="clearCallsignSearch()">
+          <span class="md-icon">clear</span>Leeren
+        </button>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- ── Idle-Zustand ──────────────────────────────────────────────────────── -->
+  <div id="cs-idle" class="empty-state">
+    <span class="md-icon">contact_page</span>
+    <p class="md-body-medium md-text-muted">Rufzeichen eingeben und Suchen drücken</p>
   </div>
+
+  <!-- ── Lade-Zustand ──────────────────────────────────────────────────────── -->
+  <div id="cs-loading" style="display:none" class="empty-state">
+    <span class="md-icon md-spin">progress_activity</span>
+    <p class="md-text-muted">Wird geladen…</p>
+  </div>
+
+  <!-- ── Fehler-Zustand ───────────────────────────────────────────────────── -->
+  <div id="cs-error" style="display:none" class="empty-state">
+    <span class="md-icon" style="color:var(--md-error,#B3261E)">error_outline</span>
+    <p class="md-text-muted">Verbindung fehlgeschlagen</p>
+  </div>
+
+  <!-- ── Ergebnisse ───────────────────────────────────────────────────────── -->
+  <div id="cs-results" style="display:none">
+
+    <div class="md-d-flex md-align-center md-justify-between md-mb-sm">
+      <h2 class="md-headline-small">
+        QSOs mit <span id="cs-result-call" style="font-family:monospace"></span>
+      </h2>
+      <span class="md-body-small md-text-muted" id="cs-result-count"></span>
+    </div>
+
+    <div class="qso-table-wrap standalone">
+      <table class="md-table qso-table cs-table" style="width:100%">
+        <thead>
+          <tr>
+            <th class="md-th">Rufzeichen</th>
+            <th class="md-th">Datum</th>
+            <th class="md-th">Zeit UTC</th>
+            <th class="md-th">Band</th>
+            <th class="md-th">Mode</th>
+            <th class="md-th">Land</th>
+            <th class="md-th">RST Rcvd</th>
+            <th class="md-th">QSL</th>
+          </tr>
+        </thead>
+        <tbody id="cs-tbody"></tbody>
+      </table>
+    </div>
+
+  </div><!-- /#cs-results -->
+
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════
@@ -611,6 +852,7 @@
      app.js ist ein ES-Modul (type="module") — lädt async, kein defer nötig.
      ══════════════════════════════════════════════════════════════════════════ -->
 <script src="/assets/js/mdesign.js"></script>
+<script src="/assets/js/chart.min.js"></script>
 <script type="module" src="/assets/js/app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {

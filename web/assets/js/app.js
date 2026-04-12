@@ -23,6 +23,11 @@ import { initExport, applyExportFilter,
          downloadAdif }                               from './modules/qsl_export.js';
 import { loadSettings, saveSettings,
          switchSettingsTab }                           from './modules/settings.js';
+import { initStats, selectStatsType,
+         applyStatsFilter, resetStatsFilter }          from './modules/stats.js';
+import { initCallsigns, doCallsignSearch,
+         clearCallsignSearch,
+         toggleCallsignSearchMode }                    from './modules/callsigns.js';
 
 // ── Panel-Callbacks registrieren ──────────────────────────────────────────────
 // Einstellungen werden nur geladen, wenn das Panel tatsächlich geöffnet wird.
@@ -32,6 +37,8 @@ panelCallbacks.settings = loadSettings;
 panelCallbacks.start    = loadRecentQsos;
 panelCallbacks.qsl      = () => initExport();  // Tab-Wechsel innerhalb QSL reicht nicht —
                                                 // initExport() prüft selbst ob bereits geladen
+panelCallbacks.stats      = initStats;
+panelCallbacks.callsigns  = initCallsigns;
 
 // ── Globale Funktionen (von HTML onclick-Attributen aufgerufen) ───────────────
 window.showPanel         = showPanel;
@@ -49,6 +56,12 @@ window.updateExportCount = updateExportCount;
 window.downloadAdif      = downloadAdif;
 window.saveSettings      = saveSettings;
 window.switchSettingsTab = switchSettingsTab;
+window.selectStatsType          = selectStatsType;
+window.applyStatsFilter         = applyStatsFilter;
+window.resetStatsFilter         = resetStatsFilter;
+window.doCallsignSearch         = doCallsignSearch;
+window.clearCallsignSearch      = clearCallsignSearch;
+window.toggleCallsignSearchMode = toggleCallsignSearchMode;
 
 // ── Initialisierung ───────────────────────────────────────────────────────────
 initThemeToggle();  // Theme-Toggle-Button aktivieren
