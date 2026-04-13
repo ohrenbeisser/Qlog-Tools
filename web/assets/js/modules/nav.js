@@ -13,7 +13,6 @@ const PANEL_TITLES = {
   stats:     'Statistik',
   callsigns: 'Rufzeichen',
   special:   'Sonderrufzeichen',
-  export:    'Export',
   settings:  'Einstellungen',
   help:      'Hilfe',
   about:     'Über',

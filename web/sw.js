@@ -7,7 +7,7 @@
  * alle alten Caches zu löschen (z. B. nach einem Deployment).
  */
 
-const CACHE_NAME = 'qlog-tools-v5';
+const CACHE_NAME = 'qlog-tools-v6';
 
 /** Alle statischen Dateien, die beim Install gecacht werden. */
 const STATIC_ASSETS = [
@@ -32,6 +32,7 @@ const STATIC_ASSETS = [
   '/assets/js/modules/stats.js',
   '/assets/js/modules/callsigns.js',
   '/assets/js/modules/special.js',
+  '/assets/js/modules/utils.js',
 ];
 
 /**

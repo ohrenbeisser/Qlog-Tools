@@ -14,6 +14,7 @@
  */
 
 import { apiGet } from './api.js';
+import { esc } from './utils.js';
 
 // ── Konfiguration je Typ ──────────────────────────────────────────────────────
 
@@ -245,7 +246,7 @@ function _renderTable(rows, cfg) {
     const tr  = document.createElement('tr');
     tr.innerHTML = `
       ${cfg.noRank ? '' : `<td class="stats-rank">${i + 1}</td>`}
-      <td>${_esc(row.label)}</td>
+      <td>${esc(row.label)}</td>
       <td>
         <div class="stats-bar-wrap">
           <div class="stats-bar-track">
@@ -410,12 +411,3 @@ function _primaryAlpha(alpha) {
   return `color-mix(in srgb, ${_getCSSVar('--md-primary', '#6750A4')} ${Math.round(alpha * 100)}%, transparent)`;
 }
 
-// ── Sicherheits-Helper ────────────────────────────────────────────────────────
-
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}

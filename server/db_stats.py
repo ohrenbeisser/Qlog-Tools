@@ -10,6 +10,8 @@ start_time liegt in der DB als ISO-8601-String vor ('2026-01-01T14:48:23.071Z'),
 daher wird DATE(start_time) bzw. strftime() für Datumsvergleiche genutzt.
 """
 
+import re
+
 from .db_base import get_connection
 
 
@@ -324,7 +326,8 @@ def _is_special_callsign(call: str) -> bool:
          ist kein bekanntes ITU-Präfix → Sonderrufzeichen
          z.B. DL75DARC (kein DL7-Präfix), aber A65RW ist normal (A6 = UAE)
     """
-    import re
+    if not call:
+        return False
     # Portable-Stationen (DL6LG/P) ausschließen — diese sind keine Sonderrufzeichen
     if '/' in call:
         return False

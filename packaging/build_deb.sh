@@ -2,7 +2,7 @@
 # build_deb.sh — Baut das Debian-Paket für Qlog-Tools.
 #
 # Aufruf: ./packaging/build_deb.sh
-# Ausgabe: packaging/qlog-tools_0.3.0_amd64.deb
+# Ausgabe: packaging/qlog-tools_0.4.3_amd64.deb
 #
 # Voraussetzungen: dpkg-deb, python3, python3-venv
 
@@ -12,7 +12,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 DEB_ROOT="$SCRIPT_DIR/debian"
 APP_DEST="$DEB_ROOT/opt/qlog-tools/app"
-VERSION="0.3.0"
+VERSION="0.4.3"
 ARCH="amd64"
 PACKAGE="qlog-tools_${VERSION}_${ARCH}"
 

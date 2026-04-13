@@ -14,6 +14,7 @@
  */
 
 import { apiGet } from './api.js';
+import { esc, qslBadges } from './utils.js';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 
@@ -112,36 +113,16 @@ function _buildRow(r) {
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td style="font-family:monospace;font-weight:600">
-      <a href="https://www.qrz.com/db/${_esc(r.callsign)}" target="_blank" rel="noopener"
-         class="md-link">${_esc(r.callsign ?? '—')}</a>
+      <a href="https://www.qrz.com/db/${esc(r.callsign)}" target="_blank" rel="noopener"
+         class="md-link">${esc(r.callsign ?? '—')}</a>
     </td>
     <td style="font-family:monospace">${r.start_date ?? '—'}</td>
     <td style="font-family:monospace">${r.start_utc  ?? '—'}</td>
-    <td><span class="md-chip md-chip-suggestion chip-band">${_esc(r.band ?? '—')}</span></td>
-    <td><span class="md-chip md-chip-suggestion chip-mode">${_esc(r.mode ?? '—')}</span></td>
-    <td>${_esc(r.country ?? '—')}</td>
-    <td>${_qslBadges(r.qsl_rcvd, r.qsl_sent)}</td>`;
+    <td><span class="md-chip md-chip-suggestion chip-band">${esc(r.band ?? '—')}</span></td>
+    <td><span class="md-chip md-chip-suggestion chip-mode">${esc(r.mode ?? '—')}</span></td>
+    <td>${esc(r.country ?? '—')}</td>
+    <td>${qslBadges(r.qsl_rcvd, r.qsl_sent)}</td>`;
   return tr;
-}
-
-function _qslBadges(rcvd, sent) {
-  const parts = [];
-  if (rcvd && rcvd !== 'N') parts.push(`<span class="md-chip md-chip-suggestion ${_rcvdClass(rcvd)}">${_rcvdLabel(rcvd)}</span>`);
-  if (sent && sent !== 'N') parts.push(`<span class="md-chip md-chip-suggestion ${_sentClass(sent)}">${_sentLabel(sent)}</span>`);
-  return parts.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap">${parts.join('')}</div>` : '—';
-}
-
-function _rcvdClass(v) {
-  return { Y: 'qsl-badge-yes', R: 'qsl-badge-requested', V: 'qsl-badge-verified', I: 'qsl-badge-ignored' }[v] ?? '';
-}
-function _sentClass(v) {
-  return { Y: 'qsl-badge-yes', R: 'qsl-badge-requested', Q: 'qsl-badge-requested', I: 'qsl-badge-ignored' }[v] ?? '';
-}
-function _rcvdLabel(v) {
-  return { Y: 'Rcvd', R: 'Req', V: 'LoTW', I: 'Ign' }[v] ?? v;
-}
-function _sentLabel(v) {
-  return { Y: 'Sent', R: 'Req', Q: 'Queue', I: 'Ign' }[v] ?? v;
 }
 
 function _setState(state) {
@@ -155,10 +136,3 @@ function _setState(state) {
   });
 }
 
-function _esc(str) {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}

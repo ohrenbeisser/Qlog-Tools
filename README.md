@@ -2,7 +2,7 @@
 
 **QSL-Karten- und Logbuch-Verwaltung für [Qlog](https://github.com/foldynl/QLog)**
 
-Qlog-Tools ist eine Desktop-Applikation für Funkamateure, die ihr Logbuch mit Qlog führen. Sie ermöglicht das komfortable Eintragen empfangener QSL-Karten und den Export von QSL-Karten als ADIF-Datei für den Bureau-Versand — direkt aus der Qlog-Datenbank heraus, ohne Qlog selbst öffnen zu müssen.
+Qlog-Tools ist eine Desktop-Applikation für Funkamateure, die ihr Logbuch mit Qlog führen. Sie ermöglicht das Eintragen empfangener QSL-Karten, den Export von QSL-Karten als ADIF-Datei für den Bureau-Versand sowie Statistiken und Sonderrufzeichen-Auswertung — direkt aus der Qlog-Datenbank, ohne Qlog selbst öffnen zu müssen.
 
 ---
 
@@ -17,20 +17,38 @@ Qlog-Tools ist eine Desktop-Applikation für Funkamateure, die ihr Logbuch mit Q
 
 ### QSL Bureau-Export
 - Filtert QSOs mit `qsl_sent = Q` und `qsl_sent_via = B` (Bureau-Warteschlange)
-- Filter nach Datum, Band, Mode und Land
+- Filter nach Datum, Band, Mode, Land und eigenem Rufzeichen (wichtig bei mehreren Rufzeichen)
+- Meistgenutztes eigenes Rufzeichen wird automatisch vorausgewählt
 - Einzelne QSOs können vom Export ausgeschlossen werden
 - ADIF-Download direkt im Browser (kein Server-Upload)
 - Zwei Feldumfänge wählbar:
-  - **Minimal** — CALL, QSO_DATE, TIME_ON, BAND, MODE, RST_SENT, QSL_RCVD, QSL_SENT, QSL_SENT_VIA
+  - **Minimal** — CALL, QSO_DATE, TIME_ON, BAND, MODE, RST_SENT, QSL_RCVD, QSL_SENT, QSL_SENT_VIA, STATION_CALLSIGN
   - **Erweitert** — zusätzlich FREQ, RST_RCVD, COMMENT, NOTES, TX_PWR, MY_RIG, MY_ANTENNA (konfigurierbar)
 - Optional: QSOs nach Export automatisch als gesendet markieren (`qsl_sent = Y`)
 - `QSL_RCVD = Y` → "TNX" auf der Karte · `QSL_RCVD = N` → "PSE" (kompatibel mit [qslshop.de](https://qslshop.de))
+
+### Statistik
+- 8 Auswertungstypen: Länder · Bänder · Modes · Jahre · Monate · Wochentage · Stunden · Rufzeichen
+- Summary-Kacheln: QSOs gesamt, Länder, Bänder, Betriebsarten
+- Filterbar nach Zeitraum, Band, Mode
+- Rang-Tabelle mit Inline-Balken + Chart.js-Diagramm (horizontal oder vertikal je nach Datenmenge)
+
+### Rufzeichen-Suche
+- Teilstring- oder Anfangs-Suche über alle Rufzeichen im Log
+- Filter nach Band und Mode
+- Pagination: 500 Zeilen pro Seite, weitere nachladen
+- QSL-Status als farbige Badges
+
+### Sonderrufzeichen
+- Zeigt alle QSOs mit Sonderrufzeichen aus dem Log
+- Erkennungslogik: Suffix > 3 Buchstaben (z.B. DA0IARU) oder mehrere Ziffern im Distrikt (z.B. DL75DARC, DL2025W)
+- Filterbar nach Zeitraum, Band, Mode
 
 ### Weitere Features
 - **Dashboard** — zeigt die letzten 20 QSOs auf einen Blick
 - **Einstellungen** — Export-Feldauswahl im Browser (LocalStorage), Server-Konfiguration im Tkinter-Fenster
 - **SUBMODE-Unterstützung** — wenn Qlog eine Unterbetriebsart speichert (z. B. FT8 unter MFSK), wird diese im ADIF-Export als MODE ausgegeben
-- **LAN-Zugriff** — optionaler Zugriff vom Smartphone oder Tablet im Heimnetz (Einstellung im Tkinter-Fenster)
+- **LAN-Zugriff** — optionaler Zugriff vom Smartphone oder Tablet im Heimnetz
 - **Dark Mode** — Material Design 3, vollständig responsiv
 - **PWA** — läuft im Browser, installierbar, funktioniert offline (Service Worker)
 
@@ -48,14 +66,12 @@ Qlog-Tools ist eine Desktop-Applikation für Funkamateure, die ihr Logbuch mit Q
 
 ### Option A — Debian-Paket (empfohlen)
 
-Das `.deb`-Paket installiert die App inklusive Python-Abhängigkeiten automatisch:
-
 ```bash
 # Paket herunterladen (aus GitHub Releases)
-wget https://github.com/ohrenbeisser/Qlog-Tools/releases/latest/download/qlog-tools_0.2.1_amd64.deb
+wget https://github.com/ohrenbeisser/Qlog-Tools/releases/latest/download/qlog-tools_0.4.3_amd64.deb
 
 # Installieren
-sudo dpkg -i qlog-tools_0.2.1_amd64.deb
+sudo dpkg -i qlog-tools_0.4.3_amd64.deb
 
 # Abhängigkeiten nachziehen falls nötig
 sudo apt install -f
@@ -63,13 +79,11 @@ sudo apt install -f
 
 Die App erscheint danach im Anwendungsmenü unter **Qlog-Tools**.
 
-Starten aus dem Terminal:
 ```bash
+# Starten
 qlog-tools
-```
 
-Deinstallieren:
-```bash
+# Deinstallieren
 sudo apt remove qlog-tools
 ```
 
@@ -98,22 +112,21 @@ python3 main.py
 
 ### Hauptfenster (Tkinter)
 
-Das Tkinter-Fenster dient als Server-Monitor und Konfiguration:
-
 | Reiter | Funktion |
 |--------|----------|
 | Server-Log | Zeigt alle API-Anfragen in Echtzeit |
 | Einstellungen | DB-Pfad, Port, Netzwerk-Binding, Log-Einträge |
 
-### Browser-Oberfläche
-
-Die eigentliche Bedienoberfläche läuft im Browser unter `http://127.0.0.1:8765`:
+### Browser-Oberfläche (`http://127.0.0.1:8765`)
 
 | Panel | Funktion |
 |-------|----------|
 | Start | Letzte 20 QSOs auf einen Blick |
 | QSL → Empfangen | QSL-Karten eintragen (Empfangen / Anfordern) |
 | QSL → Export | Bureau-Export als ADIF-Datei |
+| Statistik | QSO-Auswertungen nach 8 Typen mit Diagramm |
+| Rufzeichen | Rufzeichen-Suche mit Pagination |
+| Sonderrufzeichen | QSOs mit Sonder- und Gedenkrufzeichen |
 | Einstellungen | Export-Felder konfigurieren |
 | Über | Version, Autor, Links |
 
@@ -123,19 +136,15 @@ Die eigentliche Bedienoberfläche läuft im Browser unter `http://127.0.0.1:8765
 
 ### Server-Einstellungen (`config.ini`)
 
-Werden im Tkinter-Fenster verwaltet und in `config.ini` gespeichert:
-
 | Einstellung | Standard | Beschreibung |
 |-------------|----------|--------------|
 | `db_path` | `~/.local/share/hamradio/QLog/qlog.db` | Pfad zur Qlog-Datenbank |
 | `port` | `8765` | HTTP-Port des lokalen Servers |
-| `bind_all` | `false` | `true` = LAN-Zugriff (0.0.0.0), `false` = nur lokal — Neustart nötig |
+| `bind_all` | `false` | `true` = LAN-Zugriff (0.0.0.0) — Neustart nötig |
 | `auto_open_browser` | `true` | Browser beim Start automatisch öffnen |
 | `max_log_entries` | `200` | Maximale Anzahl Zeilen im Server-Log |
 
 ### Browser-Einstellungen (LocalStorage)
-
-Werden direkt im Browser gespeichert — kein Server-Roundtrip:
 
 | Schlüssel | Beschreibung |
 |-----------|--------------|
@@ -157,10 +166,10 @@ main.py
         └── Einstellungen (config.ini)
 ```
 
-- **Backend:** Python, FastAPI, uvicorn, SQLite (WAL-Modus)
+- **Backend:** Python, FastAPI, uvicorn, SQLite (WAL-Modus, read/write)
 - **Frontend:** Vanilla JS (ES-Module), Material Design 3 (MDesign), PWA mit Service Worker
 - **Schriften:** Roboto + Material Symbols — lokal eingebettet, kein CDN
-- **Datenbank:** Qlog-eigene SQLite-Datenbank, read/write
+- **Datenbank:** Qlog-eigene SQLite-Datenbank
 
 ---
 
@@ -188,30 +197,16 @@ python3 main.py
 | Minor `x.1.x` | Neue Features | Bei jedem Feature, Patch → 0 |
 | Patch `x.x.1` | Bugfixes / Commits | Bei jedem Commit |
 
-Version wird an drei Stellen gesetzt:
-- `web/index.html` (`.about-version` Chip)
-- `packaging/build_deb.sh` (`VERSION=`)
-- `packaging/debian/DEBIAN/control` (`Version:`)
-
-Außerdem `CACHE_NAME` in `web/sw.js` erhöhen, um den Browser-Cache zu invalidieren.
-
-```html
-<span class="md-chip md-chip-suggestion about-version">Version 0.2.1</span>
-```
-
----
-
-## Geplante Funktionen (Phase 2)
-
-- **Statistik-Tab** — Integration von Qlog-Stats
-- **Rufzeichen-Tab** — Rufzeichen-Verwaltung
-- **Abfragen-Tab** — Individuelle Datenbankabfragen
+Version wird an drei Stellen gesetzt: `web/index.html`, `packaging/build_deb.sh`, `packaging/debian/DEBIAN/control`.
+Außerdem `CACHE_NAME` in `web/sw.js` erhöhen um den Browser-Cache zu invalidieren.
 
 ---
 
 ## Lizenz
 
-Dieses Projekt ist aktuell ohne Lizenz veröffentlicht. Bei Interesse an einer Nutzung bitte direkt Kontakt aufnehmen.
+MIT License — Copyright (c) 2026 Chris Seifert, DL6LG
+
+Dieses Projekt wird unter der [MIT-Lizenz](LICENSE) veröffentlicht. Die Software wird ohne jegliche Gewähr bereitgestellt — weder ausdrücklich noch stillschweigend. Die Nutzung erfolgt auf eigene Gefahr. Der Autor übernimmt keine Haftung für Schäden, die durch die Verwendung entstehen.
 
 ---
 
