@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from . import config as cfg_module
 from .db_qsl import (
     confirm_qsos, export_countries, export_date_range,
-    export_qsos, mark_qsos_sent, recent_qsos, search_qsos,
+    export_mycallsigns, export_qsos, mark_qsos_sent, recent_qsos, search_qsos,
 )
 from .db_stats import (
     get_stats_summary,
@@ -24,7 +24,7 @@ from .db_stats import (
     get_by_year, get_by_month, get_by_weekday,
     get_by_hour, get_by_callsign,
     get_date_range, get_all_bands, get_all_modes,
-    search_callsigns,
+    search_callsigns, get_special_callsigns,
 )
 
 WEB_DIR = Path(__file__).parent.parent / "web"
@@ -149,13 +149,30 @@ def qsl_export_countries():
     return countries
 
 
+@app.get("/api/qsl/export/mycallsigns")
+def qsl_export_mycallsigns():
+    """Gibt alle eigenen Rufzeichen zurück, die im Bureau-Export vorkommen.
+
+    Sortiert nach Häufigkeit (absteigend) — das häufigste Rufzeichen steht
+    zuerst und wird im Frontend als Vorauswahl gesetzt.
+    """
+    settings = cfg_module.load()
+    try:
+        callsigns = export_mycallsigns(settings["db_path"])
+    except Exception as e:
+        raise _db_error("GET", "/api/qsl/export/mycallsigns", e)
+    _log("GET", "/api/qsl/export/mycallsigns", f"{len(callsigns)} Rufzeichen")
+    return callsigns
+
+
 @app.get("/api/qsl/export")
 def qsl_export(
-    date_from: str | None = Query(None),
-    date_to:   str | None = Query(None),
-    band:      str | None = Query(None),
-    mode:      str | None = Query(None),
-    country:   str | None = Query(None),
+    date_from:        str | None = Query(None),
+    date_to:          str | None = Query(None),
+    band:             str | None = Query(None),
+    mode:             str | None = Query(None),
+    country:          str | None = Query(None),
+    station_callsign: str | None = Query(None),
 ):
     """Gibt gefilterte QSOs für den Bureau-Export zurück (qsl_sent=Q, qsl_sent_via=B)."""
     settings = cfg_module.load()
@@ -167,6 +184,7 @@ def qsl_export(
             band=band,
             mode=mode,
             country=country,
+            station_callsign=station_callsign,
         )
     except Exception as e:
         raise _db_error("GET", "/api/qsl/export", e)
@@ -285,6 +303,35 @@ def stats_filters():
     _log("GET", "/api/stats/filters")
     return {"date_from": date_range["date_from"], "date_to": date_range["date_to"],
             "bands": bands, "modes": modes}
+
+
+# ── Sonderrufzeichen ─────────────────────────────────────────────────────────
+
+@app.get("/api/special/list")
+def special_list(
+    date_from: str | None = Query(None),
+    date_to:   str | None = Query(None),
+    band:      str | None = Query(None),
+    mode:      str | None = Query(None),
+):
+    """Gibt alle QSOs mit Sonderrufzeichen zurück.
+
+    Filterbar nach Zeitraum, Band und Mode.
+    Sonderrufzeichen: Suffix > 3 Buchstaben oder mehrere Ziffern im Distrikt.
+    """
+    settings = cfg_module.load()
+    try:
+        rows = get_special_callsigns(
+            settings["db_path"],
+            date_from=date_from,
+            date_to=date_to,
+            band=band,
+            mode=mode,
+        )
+    except Exception as e:
+        raise _db_error("GET", "/api/special/list", e)
+    _log("GET", "/api/special/list", f"{len(rows)} Sonderrufzeichen")
+    return rows
 
 
 # ── Rufzeichen-Suche ─────────────────────────────────────────────────────────

@@ -213,6 +213,33 @@ def export_date_range(db_path: str) -> dict:
         conn.close()
 
 
+def export_mycallsigns(db_path: str) -> list[str]:
+    """Gibt alle eigenen Rufzeichen zurück, die im Bureau-Export vorkommen.
+
+    Beschränkt auf QSOs mit qsl_sent='Q' und qsl_sent_via='B'.
+    Sortiert nach Häufigkeit (absteigend) — das meistgenutzte Rufzeichen
+    steht zuerst und wird als Vorauswahl im Dropdown verwendet.
+    Leere und NULL-Werte werden ausgelassen.
+    """
+    conn = get_connection(db_path)
+    try:
+        rows = conn.execute(
+            """
+            SELECT station_callsign
+            FROM   contacts
+            WHERE  qsl_sent          = 'Q'
+              AND  qsl_sent_via      = 'B'
+              AND  station_callsign  IS NOT NULL
+              AND  station_callsign  != ''
+            GROUP  BY station_callsign
+            ORDER  BY COUNT(*) DESC
+            """
+        ).fetchall()
+        return [r["station_callsign"] for r in rows]
+    finally:
+        conn.close()
+
+
 def export_countries(db_path: str) -> list[str]:
     """Gibt alle Länder zurück, die im Export-Filter vorkommen können.
 
@@ -239,12 +266,13 @@ def export_countries(db_path: str) -> list[str]:
 
 
 def export_qsos(
-    db_path:   str,
-    date_from: str | None = None,
-    date_to:   str | None = None,
-    band:      str | None = None,
-    mode:      str | None = None,
-    country:   str | None = None,
+    db_path:          str,
+    date_from:        str | None = None,
+    date_to:          str | None = None,
+    band:             str | None = None,
+    mode:             str | None = None,
+    country:          str | None = None,
+    station_callsign: str | None = None,
 ) -> list[dict]:
     """QSOs für den Bureau-Export: qsl_sent='Q' AND qsl_sent_via='B'.
 
@@ -253,11 +281,12 @@ def export_qsos(
 
     Parameters
     ----------
-    date_from : str | None  — Untere Datumsgrenze, Format YYYY-MM-DD (inklusiv)
-    date_to   : str | None  — Obere Datumsgrenze, Format YYYY-MM-DD (inklusiv)
-    band      : str | None  — Exakter Band-Wert, z. B. '40m'
-    mode      : str | None  — Exakter Mode-Wert, z. B. 'SSB'
-    country   : str | None  — Exakter Ländername
+    date_from        : str | None  — Untere Datumsgrenze, Format YYYY-MM-DD (inklusiv)
+    date_to          : str | None  — Obere Datumsgrenze, Format YYYY-MM-DD (inklusiv)
+    band             : str | None  — Exakter Band-Wert, z. B. '40m'
+    mode             : str | None  — Exakter Mode-Wert, z. B. 'SSB'
+    country          : str | None  — Exakter Ländername
+    station_callsign : str | None  — Eigenes Rufzeichen (station_callsign in DB)
     """
     conditions = [
         "qsl_sent     = 'Q'",
@@ -280,6 +309,9 @@ def export_qsos(
     if country:
         conditions.append("country = ?")
         params.append(country)
+    if station_callsign:
+        conditions.append("station_callsign = ?")
+        params.append(station_callsign)
 
     where = " AND ".join(conditions)
 
@@ -292,7 +324,8 @@ def export_qsos(
                    strftime('%H:%M',   start_time)  AS start_utc,
                    freq, band, mode, submode, rst_sent, rst_rcvd, country,
                    comment, notes, tx_pwr, my_rig, my_antenna,
-                   qsl_rcvd, qsl_sent, qsl_sent_via
+                   qsl_rcvd, qsl_sent, qsl_sent_via,
+                   station_callsign
             FROM   contacts
             WHERE  {where}
             ORDER  BY start_time DESC

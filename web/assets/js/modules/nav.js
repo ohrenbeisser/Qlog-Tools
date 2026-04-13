@@ -12,7 +12,7 @@ const PANEL_TITLES = {
   qsl:       'QSL',
   stats:     'Statistik',
   callsigns: 'Rufzeichen',
-  queries:   'Abfragen',
+  special:   'Sonderrufzeichen',
   export:    'Export',
   settings:  'Einstellungen',
   help:      'Hilfe',

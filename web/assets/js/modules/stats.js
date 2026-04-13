@@ -28,13 +28,15 @@ const TYPE_CONFIG = {
     chartLimit: 20,
   },
   band: {
-    endpoint:   '/api/stats/by/band',
-    tableTitle: 'Bänder nach QSO-Anzahl',
-    badge:      n => `${n} Bänder`,
-    chartTitle: 'Bänder',
-    chartSub:   'nach QSO-Anzahl',
-    colHeader:  'Band',
-    chartLimit: 20,
+    endpoint:      '/api/stats/by/band',
+    tableTitle:    'Bänder nach QSO-Anzahl',
+    badge:         n => `${n} Bänder`,
+    chartTitle:    'Bänder',
+    chartSub:      'nach QSO-Anzahl',
+    colHeader:     'Band',
+    chartLimit:    20,
+    forceVertical: true,   // Bänder immer vertikal — Labels passen auf X-Achse
+    noRank:        true,   // Rang-Spalte weglassen — Reihenfolge ist selbsterklärend
   },
   mode: {
     endpoint:   '/api/stats/by/mode',
@@ -234,11 +236,15 @@ function _renderTable(rows, cfg) {
   tbody.innerHTML = '';
   const maxVal = rows.length > 0 ? rows[0].count : 1;
 
+  // Rang-Spalten-Header ein-/ausblenden
+  const rankTh = document.getElementById('stats-rank-th');
+  if (rankTh) rankTh.style.display = cfg.noRank ? 'none' : '';
+
   rows.forEach((row, i) => {
     const pct = Math.round((row.count / maxVal) * 100);
     const tr  = document.createElement('tr');
     tr.innerHTML = `
-      <td class="stats-rank">${i + 1}</td>
+      ${cfg.noRank ? '' : `<td class="stats-rank">${i + 1}</td>`}
       <td>${_esc(row.label)}</td>
       <td>
         <div class="stats-bar-wrap">
@@ -295,8 +301,9 @@ function _renderChart(rows, cfg) {
     _chartInstance = null;
   }
 
-  // Horizontal bei vielen Labels (Länder, Rufzeichen, Monate), sonst vertikal
-  const isHorizontal = limit > 12;
+  // Horizontal bei vielen Labels (Länder, Rufzeichen, Monate), sonst vertikal.
+  // forceVertical überschreibt die automatische Entscheidung (z.B. Bänder).
+  const isHorizontal = cfg.forceVertical ? false : limit > 12;
 
   // Canvas-Container-Höhe dynamisch anpassen
   const body = canvas.parentElement;
@@ -343,7 +350,8 @@ function _renderChart(rows, cfg) {
             maxRotation: isHorizontal ? 0 : 35,
             callback: isHorizontal
               ? v => v.toLocaleString('de-DE')
-              : undefined,
+              // Vertikal: v ist der numerische Index → Label aus Array lesen
+              : function(v) { return labels[v] ?? v; },
           },
           grid: { color: isHorizontal ? gridColor : 'transparent' },
         },

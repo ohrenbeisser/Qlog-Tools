@@ -52,7 +52,7 @@ const EXT_FIELD_MAP = {
 /** Aktuell geladene QSO-Liste (wird für den ADIF-Export genutzt). */
 let _currentQsos = [];
 
-/** Verhindert mehrfaches Laden der Länderliste. */
+/** Verhindert mehrfaches Laden der Dropdown-Daten. */
 let _countriesLoaded = false;
 
 /** Einmalig registrierter Dialog-Listener. */
@@ -68,12 +68,17 @@ export async function initExport() {
   if (_countriesLoaded) return;
   _initDialog();
   try {
-    const [countries, range] = await Promise.all([
+    const [countries, mycallsigns, range, filters] = await Promise.all([
       apiGet('/api/qsl/export/countries'),
+      apiGet('/api/qsl/export/mycallsigns'),
       apiGet('/api/qsl/export/daterange'),
+      apiGet('/api/stats/filters'),
     ]);
     _fillCountrySelect(countries);
+    _fillMycallSelect(mycallsigns);
     _prefillDateRange(range);
+    _fillSimpleSelect('exp-band', filters.bands);
+    _fillSimpleSelect('exp-mode', filters.modes);
     _countriesLoaded = true;
   } catch (err) {
     // Nicht kritisch — Felder bleiben leer, Filter funktioniert trotzdem
@@ -132,6 +137,41 @@ function _fillCountrySelect(countries) {
   });
 }
 
+/**
+ * Befüllt ein einfaches Select-Element mit Werten (ohne Vorauswahl).
+ * Die erste Option ("Alle ...") bleibt selected.
+ *
+ * @param {string}   id     — Element-ID
+ * @param {string[]} values
+ */
+function _fillSimpleSelect(id, values) {
+  const sel = document.getElementById(id);
+  values.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v;
+    opt.textContent = v;
+    sel.appendChild(opt);
+  });
+}
+
+/**
+ * Befüllt das Eigenes-Rufzeichen-Dropdown mit den vorhandenen Werten.
+ * Das erste Element (häufigste Rufzeichen) wird als Vorauswahl gesetzt.
+ *
+ * @param {string[]} callsigns
+ */
+function _fillMycallSelect(callsigns) {
+  const sel = document.getElementById('exp-mycall');
+  callsigns.forEach((cs, i) => {
+    const opt = document.createElement('option');
+    opt.value = cs;
+    opt.textContent = cs;
+    sel.appendChild(opt);
+    // Erstes Rufzeichen (häufigstes) vorauswählen
+    if (i === 0) sel.value = cs;
+  });
+}
+
 // ── Filter ────────────────────────────────────────────────────────────────────
 
 /**
@@ -168,6 +208,7 @@ export function resetExportFilter() {
   document.getElementById('exp-band').value       = '';
   document.getElementById('exp-mode').value       = '';
   document.getElementById('exp-country').value    = '';
+  document.getElementById('exp-mycall').value     = '';
   _currentQsos = [];
   _showExportState('idle');
 }
@@ -180,11 +221,12 @@ export function resetExportFilter() {
  */
 function _buildFilterParams() {
   const fields = {
-    date_from: document.getElementById('exp-date-from').value,
-    date_to:   document.getElementById('exp-date-to').value,
-    band:      document.getElementById('exp-band').value,
-    mode:      document.getElementById('exp-mode').value,
-    country:   document.getElementById('exp-country').value,
+    date_from:        document.getElementById('exp-date-from').value,
+    date_to:          document.getElementById('exp-date-to').value,
+    band:             document.getElementById('exp-band').value,
+    mode:             document.getElementById('exp-mode').value,
+    country:          document.getElementById('exp-country').value,
+    station_callsign: document.getElementById('exp-mycall').value,
   };
   return Object.entries(fields)
     .filter(([, v]) => v)
@@ -389,17 +431,18 @@ function _buildAdifRecord(q, scope) {
   };
 
   // ── Pflichtfelder (Minimal) ───────────────────────────────────────────────
-  adifField('CALL',        q.callsign);
-  adifField('QSO_DATE',    (q.start_date ?? '').replace(/-/g, ''));   // YYYYMMDD
-  adifField('TIME_ON',     (q.start_utc  ?? '').replace(':', '') + '00'); // HHMMSS
-  adifField('BAND',        q.band);
+  adifField('CALL',             q.callsign);
+  adifField('QSO_DATE',         (q.start_date ?? '').replace(/-/g, ''));   // YYYYMMDD
+  adifField('TIME_ON',          (q.start_utc  ?? '').replace(':', '') + '00'); // HHMMSS
+  adifField('BAND',             q.band);
   // Wenn Unterbetriebsart vorhanden, diese als MODE exportieren (z. B. FT8 statt MFSK)
-  adifField('MODE',        q.submode || q.mode);
-  adifField('RST_SENT',    q.rst_sent);
+  adifField('MODE',             q.submode || q.mode);
+  adifField('RST_SENT',         q.rst_sent);
   // QSL_RCVD=Y → "TNX" gedruckt; N/leer → "PSE" (Quelle: qslshop.de)
-  adifField('QSL_RCVD',    q.qsl_rcvd ?? 'N');
-  adifField('QSL_SENT',    'Q');
-  adifField('QSL_SENT_VIA','B');
+  adifField('QSL_RCVD',         q.qsl_rcvd ?? 'N');
+  adifField('QSL_SENT',         'Q');
+  adifField('QSL_SENT_VIA',     'B');
+  adifField('STATION_CALLSIGN', q.station_callsign);
 
   // ── Erweiterte Felder (konfigurierbar in den Einstellungen) ──────────────
   if (scope === SCOPE_EXTENDED) {

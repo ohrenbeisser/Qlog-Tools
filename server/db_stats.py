@@ -288,6 +288,106 @@ def get_by_hour(
         conn.close()
 
 
+# ── Sonderrufzeichen ──────────────────────────────────────────────────────────
+
+# Bekannte ITU-Präfixe, die mit einer Ziffer enden.
+# Werden bei der 2-Ziffern-Analyse berücksichtigt, damit z.B. A65RW
+# (A6 = UAE) nicht fälschlicherweise als Sonderrufzeichen gezählt wird.
+_KNOWN_DIGIT_PREFIXES = {
+    'A4', 'A6', 'A7', 'A9',
+    'C3',
+    'E7',
+    'S5',
+    'T7',
+    'V5',
+    'Z3', 'Z6',
+    '2E', '2M', '2W',
+    '3Z',
+    '4J', '4K', '4L', '4X', '4Z',
+    '5B', '5C', '5H', '5N', '5R', '5T', '5U', '5V', '5W', '5X', '5Z',
+    '6O', '6V', '6W', '6Y',
+    '7P', '7Q', '7X',
+    '8P', '8Q', '8R', '8S',
+    '9A', '9H', '9J', '9K', '9L', '9M', '9N', '9Q', '9U', '9V', '9X', '9Y',
+}
+
+
+def _is_special_callsign(call: str) -> bool:
+    """Gibt True zurück wenn das Rufzeichen ein Sonderrufzeichen ist.
+
+    Kriterien (aus Qlog-Stats übernommen):
+      1. Suffix (abschließende Buchstaben) länger als 3 → Sonderrufzeichen
+         z.B. DA0IARU (Suffix: IARU=4), 3Z0XMAS (Suffix: XMAS=4)
+      2. Letzte Ziffernsequenz im Präfix-/Distriktteil hat 3+ Stellen → Sonder
+         z.B. DL2025W, 9A100IARU
+      3. Letzte Ziffernsequenz hat genau 2 Stellen UND der Präfix+erste Ziffer
+         ist kein bekanntes ITU-Präfix → Sonderrufzeichen
+         z.B. DL75DARC (kein DL7-Präfix), aber A65RW ist normal (A6 = UAE)
+    """
+    import re
+    # Portable-Stationen (DL6LG/P) ausschließen — diese sind keine Sonderrufzeichen
+    if '/' in call:
+        return False
+    suffix_match = re.search(r'([A-Z]+)$', call)
+    if not suffix_match:
+        return False
+    suffix = suffix_match.group(1)
+    prefix_and_number = call[:-len(suffix)]
+    # Kriterium 1: Suffix > 3 Buchstaben
+    if len(suffix) > 3:
+        return True
+    # Ziffernsequenzen im Präfix+Distrikt analysieren
+    digit_sequences = re.findall(r'\d+', prefix_and_number)
+    if not digit_sequences:
+        return False
+    last_seq = digit_sequences[-1]
+    last_pos = prefix_and_number.rfind(last_seq)
+    prefix   = prefix_and_number[:last_pos]
+    if len(last_seq) == 1:
+        return False
+    if len(last_seq) == 2:
+        return (prefix + last_seq[0]) not in _KNOWN_DIGIT_PREFIXES
+    # 3+ Ziffern → definitiv Sonderrufzeichen
+    return True
+
+
+def get_special_callsigns(
+    db_path:   str,
+    date_from: str | None = None,
+    date_to:   str | None = None,
+    band:      str | None = None,
+    mode:      str | None = None,
+) -> list[dict]:
+    """Gibt alle QSOs mit Sonderrufzeichen zurück.
+
+    Sonderrufzeichen werden in Python nach dem DB-Abruf gefiltert
+    (_is_special_callsign). Portable-Stationen (enthält '/') werden
+    ausgeschlossen, da deren Suffix-Analyse nicht zuverlässig ist.
+
+    Sortierung: neueste QSOs zuerst.
+    """
+    conn = get_connection(db_path)
+    try:
+        q = """
+            SELECT callsign,
+                   strftime('%Y-%m-%d', start_time) AS start_date,
+                   strftime('%H:%M',   start_time)  AS start_utc,
+                   band, mode, country,
+                   qsl_rcvd, qsl_sent
+            FROM   contacts
+            WHERE  callsign IS NOT NULL
+              AND  callsign NOT LIKE '%/%'
+        """
+        params: list = []
+        q, params = _add_filters(q, params, date_from, date_to, band, mode)
+        q += " ORDER BY start_time DESC"
+        rows = conn.execute(q, params).fetchall()
+    finally:
+        conn.close()
+
+    return [dict(r) for r in rows if _is_special_callsign(r["callsign"])]
+
+
 def get_by_callsign(
     db_path:   str,
     date_from: str | None = None,

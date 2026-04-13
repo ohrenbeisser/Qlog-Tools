@@ -37,12 +37,8 @@
         <span class="md-icon">contact_phone</span>Rufzeichen
       </a>
       <a href="#" class="md-drawer-item md-ripple"
-         onclick="showPanel('queries', this); return false">
-        <span class="md-icon">manage_search</span>Abfragen
-      </a>
-      <a href="#" class="md-drawer-item md-ripple"
-         onclick="showPanel('export', this); return false">
-        <span class="md-icon">download</span>Export
+         onclick="showPanel('special', this); return false">
+        <span class="md-icon">star</span>Sonderrufzeichen
       </a>
       <div class="md-drawer-divider"></div>
       <a href="#" class="md-drawer-item md-ripple"
@@ -290,7 +286,7 @@
       </div>
       <div class="md-card-content export-filter-content">
 
-        <!-- Zeile 1: Datumsbereich -->
+        <!-- Zeile 1: Datumsbereich + Eigenes Rufzeichen -->
         <div class="export-filter-row">
           <div class="md-text-field export-filter-field">
             <input type="date" id="exp-date-from" placeholder=" ">
@@ -300,17 +296,24 @@
             <input type="date" id="exp-date-to" placeholder=" ">
             <label class="md-text-field-label">Datum bis</label>
           </div>
+          <div class="export-filter-field">
+            <select id="exp-mycall" class="md-select">
+              <option value="">Alle eigenen Rufzeichen</option>
+            </select>
+          </div>
         </div>
 
         <!-- Zeile 2: Band, Mode, Land -->
         <div class="export-filter-row">
-          <div class="md-text-field export-filter-field">
-            <input type="text" id="exp-band" placeholder=" " autocomplete="off">
-            <label class="md-text-field-label">Band</label>
+          <div class="export-filter-field">
+            <select id="exp-band" class="md-select">
+              <option value="">Alle Bänder</option>
+            </select>
           </div>
-          <div class="md-text-field export-filter-field">
-            <input type="text" id="exp-mode" placeholder=" " autocomplete="off">
-            <label class="md-text-field-label">Mode</label>
+          <div class="export-filter-field">
+            <select id="exp-mode" class="md-select">
+              <option value="">Alle Modes</option>
+            </select>
           </div>
           <div class="export-filter-field">
             <select id="exp-country" class="md-select">
@@ -517,7 +520,7 @@
           <table class="stats-table">
             <thead>
               <tr>
-                <th class="stats-rank">#</th>
+                <th class="stats-rank" id="stats-rank-th">#</th>
                 <th id="stats-col-header">Land</th>
                 <th style="width:160px">QSOs</th>
               </tr>
@@ -654,13 +657,91 @@
 <!-- ══════════════════════════════════════════════════════════════════════════
      PANEL: ABFRAGEN (Phase 2)
      ══════════════════════════════════════════════════════════════════════════ -->
-<div class="app-content tab-panel" id="panel-queries">
-  <div class="coming-soon">
-    <span class="md-icon">manage_search</span>
-    <h2 class="md-headline-small">Abfragen</h2>
-    <p class="md-body-medium md-text-muted">Wird in einer späteren Version integriert.</p>
-    <span class="md-chip md-chip-suggestion">Kommt bald</span>
+<div class="app-content tab-panel" id="panel-special">
+
+  <!-- Filter-Karte -->
+  <article class="md-card md-card-outlined md-mb-lg">
+    <div class="md-card-header">
+      <div class="md-card-header-text">
+        <h3 class="md-card-title">Filter</h3>
+        <p class="md-card-subtitle">Suffix &gt; 3 Buchstaben · mehrere Ziffern im Distrikt (z.&thinsp;B. DL75DARC, DA0IARU)</p>
+      </div>
+    </div>
+    <div class="md-card-content export-filter-content">
+
+      <!-- Zeile 1: Datumsbereich -->
+      <div class="export-filter-row">
+        <div class="md-text-field export-filter-field">
+          <input type="date" id="sp-date-from" placeholder=" ">
+          <label class="md-text-field-label">Datum von</label>
+        </div>
+        <div class="md-text-field export-filter-field">
+          <input type="date" id="sp-date-to" placeholder=" ">
+          <label class="md-text-field-label">Datum bis</label>
+        </div>
+      </div>
+
+      <!-- Zeile 2: Band, Mode -->
+      <div class="export-filter-row">
+        <div class="export-filter-field">
+          <select id="sp-band" class="md-select">
+            <option value="">Alle Bänder</option>
+          </select>
+        </div>
+        <div class="export-filter-field">
+          <select id="sp-mode" class="md-select">
+            <option value="">Alle Modes</option>
+          </select>
+        </div>
+      </div>
+
+      <hr class="md-divider search-divider">
+
+      <!-- Aktionsbuttons -->
+      <div class="search-actions">
+        <button class="md-btn md-btn-filled md-ripple" onclick="applySpecialFilter()">
+          <span class="md-icon">filter_alt</span>Anwenden
+        </button>
+        <button class="md-btn md-btn-outlined md-ripple" onclick="resetSpecialFilter()">
+          <span class="md-icon">clear</span>Zurücksetzen
+        </button>
+      </div>
+
+    </div>
+  </article>
+
+  <!-- Zustände -->
+  <div class="empty-state" id="sp-loading" style="display:none">
+    <span class="md-icon md-spin">progress_activity</span>
+    <p class="md-text-muted">Wird geladen…</p>
   </div>
+  <div class="empty-state" id="sp-empty" style="display:none">
+    <span class="md-icon">inbox</span>
+    <p class="md-text-muted">Keine Sonderrufzeichen gefunden</p>
+  </div>
+
+  <!-- Ergebnis-Tabelle -->
+  <div id="sp-results" style="display:none">
+    <div class="qso-table-wrap standalone">
+      <table class="md-table md-table-striped qso-table" style="width:100%">
+        <thead>
+          <tr>
+            <th class="md-th">Rufzeichen</th>
+            <th class="md-th">Datum</th>
+            <th class="md-th">Zeit UTC</th>
+            <th class="md-th">Band</th>
+            <th class="md-th">Mode</th>
+            <th class="md-th">Land</th>
+            <th class="md-th">QSL</th>
+          </tr>
+        </thead>
+        <tbody id="sp-tbody"></tbody>
+      </table>
+    </div>
+    <p class="md-body-small md-text-muted md-mt-sm" id="sp-count"
+       style="text-align:right"></p>
+  </div>
+
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════════════════

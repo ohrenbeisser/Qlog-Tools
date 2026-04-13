@@ -28,6 +28,8 @@ import { initStats, selectStatsType,
 import { initCallsigns, doCallsignSearch,
          clearCallsignSearch, loadMoreCallsigns,
          toggleCallsignSearchMode }                    from './modules/callsigns.js';
+import { initSpecial, applySpecialFilter,
+         resetSpecialFilter }                          from './modules/special.js';
 
 // ── Panel-Callbacks registrieren ──────────────────────────────────────────────
 // Einstellungen werden nur geladen, wenn das Panel tatsächlich geöffnet wird.
@@ -39,6 +41,7 @@ panelCallbacks.qsl      = () => initExport();  // Tab-Wechsel innerhalb QSL reic
                                                 // initExport() prüft selbst ob bereits geladen
 panelCallbacks.stats      = initStats;
 panelCallbacks.callsigns  = initCallsigns;
+panelCallbacks.special    = initSpecial;
 
 // ── Globale Funktionen (von HTML onclick-Attributen aufgerufen) ───────────────
 window.showPanel         = showPanel;
@@ -63,6 +66,8 @@ window.doCallsignSearch         = doCallsignSearch;
 window.clearCallsignSearch      = clearCallsignSearch;
 window.loadMoreCallsigns        = loadMoreCallsigns;
 window.toggleCallsignSearchMode = toggleCallsignSearchMode;
+window.applySpecialFilter       = applySpecialFilter;
+window.resetSpecialFilter       = resetSpecialFilter;
 
 // ── Initialisierung ───────────────────────────────────────────────────────────
 initThemeToggle();  // Theme-Toggle-Button aktivieren

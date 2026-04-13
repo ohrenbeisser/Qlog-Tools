@@ -23,9 +23,19 @@
 
 /* ── Navigation Drawer ───────────────────────────────────────────────────── */
 
+/* Hover: deutlicher Primary-Tint + Icon färben, keine Unterstreichung */
+.md-drawer-item:hover {
+  background-color: color-mix(in srgb, var(--md-primary) 10%, transparent);
+  color: var(--md-primary);
+  text-decoration: none;
+}
+.md-drawer-item:hover .md-icon {
+  color: var(--md-primary);
+}
+
 /* Aktiver Menüeintrag */
 .md-drawer-item.md-active {
-  background-color: color-mix(in srgb, var(--md-primary) 12%, transparent);
+  background-color: color-mix(in srgb, var(--md-primary) 18%, transparent);
   color: var(--md-primary);
   font-weight: 500;
 }
