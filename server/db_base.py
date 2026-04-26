@@ -1,8 +1,8 @@
 """
 db_base.py — SQLite-Verbindungs-Factory.
 
-WAL-Modus und busy_timeout ermöglichen gleichzeitigen Lesezugriff
-durch Qlog, ohne SQLITE_BUSY-Fehler zu riskieren.
+busy_timeout verhindert SQLITE_BUSY-Fehler bei kurzzeitiger Konkurrenz
+mit Qlog. Journal-Modus wird nicht verändert — qlog.db gehört Qlog.
 """
 
 import re
@@ -37,15 +37,15 @@ def get_connection(db_path: str) -> sqlite3.Connection:
 
     Notes
     -----
-    - WAL (Write-Ahead Logging) erlaubt gleichzeitiges Lesen und Schreiben.
     - busy_timeout=5000 ms: Wartezeit bei gesperrter DB, bevor ein Fehler geworfen wird.
     - check_same_thread=False: Verbindung wird in FastAPI-Worker-Threads genutzt.
     - REGEXP wird als Python-Funktion registriert (Qlog-Trigger benötigen sie).
     - Jede aufrufende Funktion ist selbst für conn.close() verantwortlich.
+    - Kein PRAGMA journal_mode=WAL: qlog.db gehört Qlog, der Journal-Modus
+      darf nicht verändert werden — sonst kann Qlog nicht mehr schreiben.
     """
     conn = sqlite3.connect(db_path, timeout=10, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.create_function("REGEXP", 2, _regexp)
-    conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA busy_timeout=5000;")
     return conn
