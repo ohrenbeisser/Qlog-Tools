@@ -92,7 +92,9 @@ sudo apt remove qlog-tools
 ```bash
 git clone https://github.com/ohrenbeisser/Qlog-Tools.git
 cd Qlog-Tools
-pip3 install -r requirements.txt
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 python3 main.py
 ```
 
@@ -178,7 +180,9 @@ main.py
 ```bash
 git clone https://github.com/ohrenbeisser/Qlog-Tools.git
 cd Qlog-Tools
-pip3 install -r requirements.txt
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 python3 main.py
 ```
 
