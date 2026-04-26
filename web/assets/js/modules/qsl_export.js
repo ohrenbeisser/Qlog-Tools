@@ -286,7 +286,12 @@ function _buildExportRow(q) {
     <td class="md-td" style="font-family:monospace">${q.start_utc  ?? '—'}</td>
     <td class="md-td"><span class="md-chip md-chip-suggestion chip-band">${q.band ?? '—'}</span></td>
     <td class="md-td"><span class="md-chip md-chip-suggestion chip-mode">${q.mode ?? '—'}</span></td>
-    <td class="md-td" style="font-family:monospace">${q.rst_sent ?? '—'}</td>`;
+    <td class="md-td" style="font-family:monospace">${q.rst_sent ?? '—'}</td>
+    <td class="md-td">
+      <span class="md-chip ${q.qsl_rcvd === 'Y' ? 'md-chip-primary' : 'md-chip-suggestion'}">
+        ${q.qsl_rcvd === 'Y' ? 'TNX' : 'PSE'}
+      </span>
+    </td>`;
   return tr;
 }
 
